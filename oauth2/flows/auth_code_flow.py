@@ -13,7 +13,6 @@ class AuthorizationRequest(Request):
 
 def request_authorization(request):
     auth_request = AuthorizationRequest(request)
-    auth_request.validate()
 
     if not auth_request.client.is_registered():
         raise client_errors.UnknownClientError(auth_request.client)
