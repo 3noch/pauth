@@ -1,8 +1,10 @@
 from abc import ABCMeta, abstractmethod
 
 from pauth.clients import Client
+from pauth.clients.errors import UnauthorizedClientError, UnknownClientError
 from pauth.conf import config
 from pauth.credentials import ClientCredentials
+from pauth.requests.errors import InvalidAuthorizationRequestError
 
 
 class Request(object):
@@ -52,20 +54,40 @@ class Request(object):
     @abstractmethod
     def validate(self):
         """
-        This method is a hook into the constructor that allows subclasses of this
-        class to define their own rules about what a valid request looks like. This
-        method should throw errors when it encounters aspects of the request that
-        it doesn't like.
+        A hook into the constructor that allows subclasses of this class to define
+        their own rules about what a valid request looks like. This method should
+        throw errors when it encounters aspects of the request that it doesn't like.
         """
-        pass
+        if not self._has_required_parameters():
+            raise InvalidAuthorizationRequestError('Some required request parameters are missing.')
+
+        if self.client is None or not self.client.is_registered():
+            raise UnknownClientError(self.client)
+
+        if not self.client.is_authorized():
+            raise UnauthorizedClientError(self.client)
 
     def _has_required_parameters(self):
         """
-        This is a simple utility function for checking to see if the request has all
+        A simple utility function for checking to see if the request has all
         the parameters defined in `required_parameters`. It's meant to be used by
         subclasses in order keep things DRY.
         """
         return all(p in self.required_parameters for p in self.parameters)
 
     def has_header(self, header):
+        """
+        Returns `true` when `header` matches at least one of the requests headers
+        without comparing case.
+        """
         return any(header == h.lower() for h in self.headers)
+
+    def get_header(self, header):
+        """
+        Returns the value of the request header that matches `header` (without
+        comparing case) or `None` if there is no matching header.
+        """
+        for h in self.headers:
+            if h.lower() == header:
+                return self.headers[h]
+        return None
