@@ -1,5 +1,3 @@
-from abc import ABCMeta, abstractmethod
-
 from pauth.clients import Client
 from pauth.clients.errors import UnauthorizedClientError, UnknownClientError
 from pauth.conf import config
@@ -8,8 +6,6 @@ from pauth.requests.errors import InvalidAuthorizationRequestError
 
 
 class Request(object):
-    __metaclass__ = ABCMeta
-
     required_parameters = ()
 
     def __new__(cls, request):
@@ -51,7 +47,6 @@ class Request(object):
 
         self.validate()  # throw some errors if the request is yucky
 
-    @abstractmethod
     def validate(self):
         """
         A hook into the constructor that allows subclasses of this class to define
@@ -61,10 +56,11 @@ class Request(object):
         if not self._has_required_parameters():
             raise InvalidAuthorizationRequestError('Some required request parameters are missing.')
 
-        if self.client is None or not self.client.is_registered():
+        if self.client is None:
             raise UnknownClientError(self.client)
-
-        if not self.client.is_authorized():
+        elif not self.client.is_registered():
+            raise UnknownClientError(self.client)
+        elif not self.client.is_authorized():
             raise UnauthorizedClientError(self.client)
 
     def _has_required_parameters(self):
@@ -77,17 +73,15 @@ class Request(object):
 
     def has_header(self, header):
         """
-        Returns `true` when `header` matches at least one of the requests headers
+        Returns `True` when `header` matches at least one of the requests headers
         without comparing case.
         """
-        return any(header == h.lower() for h in self.headers)
+        return any(header.lower() == h.lower() for h in self.headers)
 
     def get_header(self, header):
         """
         Returns the value of the request header that matches `header` (without
         comparing case) or `None` if there is no matching header.
         """
-        for h in self.headers:
-            if h.lower() == header:
-                return self.headers[h]
-        return None
+        return next((v for k, v in self.headers.items()
+                     if k.lower() == header.lower()), None)
