@@ -14,6 +14,7 @@ class PauthConfiguration(Configuration):
         self.clients = ClientConfiguration()
         self.requests = RequestConfiguration()
         self.responses = ResponseConfiguration()
+        self.scopes = ScopeConfiguration()
 
 
 class ClientConfiguration(Configuration):
@@ -31,6 +32,11 @@ class ResponseConfiguration(Configuration):
     def __init__(self):
         self.adapter = _unconfigured
 
+
+class ScopeConfiguration(Configuration):
+    def __init__(self):
+        self.is_scope = _unconfigured
+        self.has_scope = _unconfigured
 
 # `config` is the global configuration class. It's meant to be
 # used by the library's user to hook into his own setup.

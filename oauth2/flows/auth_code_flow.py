@@ -15,6 +15,8 @@ class AuthorizationRequest(Request):
 
 def request_authorization(request):
     try:
-        return AuthorizationRequest(request)
+        auth_request = AuthorizationRequest(request)
     except OAuthError as e:
         return e.response
+
+

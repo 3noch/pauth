@@ -44,6 +44,7 @@ class Request(object):
 
         self.response_type = self.parameters.get('response_type')
         self.state = self.parameters.get('state')
+        self.scope = self.parameters.get('scope')
 
         self.validate()  # throw some errors if the request is yucky
 
