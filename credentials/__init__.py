@@ -15,10 +15,3 @@ def get_credentials_from_basic(data):
 def get_credentials_from_mac(data):
     pass
 
-
-def get_credentials_from_digest(data):
-    pass
-
-
-def get_credentials_from_bearer(data):
-    pass
