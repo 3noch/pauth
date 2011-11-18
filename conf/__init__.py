@@ -47,7 +47,13 @@ class RequestConfiguration(Configuration):
     """
     def __init__(self):
         self.adapter = _unconfigured
-        self.credentials_readers = {}
+        self._credentials_readers = {}
+
+    def set_credentials_reader(method, reader):
+        self._credentials_readers[method.lower()] = reader
+
+    def get_credentials_reader(method):
+        return self._credentials_readers.get(method.lower())
 
 
 class ResponseConfiguration(Configuration):
