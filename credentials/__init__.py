@@ -6,3 +6,19 @@ class Credentials(object):
 
 class ClientCredentials(Credentials):
     pass
+
+
+def get_credentials_from_basic(data):
+    pass
+
+
+def get_credentials_from_mac(data):
+    pass
+
+
+def get_credentials_from_digest(data):
+    pass
+
+
+def get_credentials_from_bearer(data):
+    pass

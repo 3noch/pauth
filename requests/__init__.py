@@ -1,8 +1,8 @@
+import errors
 from pauth.clients import Client
 from pauth.clients.errors import UnauthorizedClientError, UnknownClientError
 from pauth.conf import config
 from pauth.credentials import ClientCredentials
-from pauth.requests.errors import InvalidAuthorizationRequestError
 
 
 class Request(object):
@@ -35,34 +35,12 @@ class Request(object):
         self.headers = headers or {}
         self.parameters = parameters or {}
 
-        if 'client_id' in self.parameters:
-            credentials = ClientCredentials(self.parameters['client_id'],
-                                            self.parameters.get('client_secret'))
-            self.client = Client(credentials)
-        else:
-            self.client = None
-
-        self.response_type = self.parameters.get('response_type')
         self.state = self.parameters.get('state')
-        self.scope = self.parameters.get('scope')
 
-        self.validate()  # throw some errors if the request is yucky
+        self.configure()  # finish configuring
 
-    def validate(self):
-        """
-        A hook into the constructor that allows subclasses of this class to define
-        their own rules about what a valid request looks like. This method should
-        throw errors when it encounters aspects of the request that it doesn't like.
-        """
-        if not self._has_required_parameters():
-            raise InvalidAuthorizationRequestError('Some required request parameters are missing.')
-
-        if self.client is None:
-            raise UnknownClientError(self.client)
-        elif not self.client.is_registered():
-            raise UnknownClientError(self.client)
-        elif not self.client.is_authorized():
-            raise UnauthorizedClientError(self.client)
+    def configure():
+        pass
 
     def _has_required_parameters(self):
         """
@@ -70,7 +48,7 @@ class Request(object):
         the parameters defined in `required_parameters`. It's meant to be used by
         subclasses in order keep things DRY.
         """
-        return all(p in self.required_parameters for p in self.parameters)
+        return all(r in self.parameters for r in self.required_parameters)
 
     def has_header(self, header):
         """
@@ -86,3 +64,47 @@ class Request(object):
         """
         return next((v for k, v in self.headers.items()
                      if k.lower() == header.lower()), None)
+
+    def get_credentials(self):
+        auth_header = self.get_header('Authorization')
+
+        if auth_header is not None:
+            method, data = auth_header.split(' ', 1)
+            return get_credentials_by_method(method.strip(), data.strip())
+        else:
+            return None
+
+
+class AuthorizationRequest(Request):
+    required_parameters = ('client_id', 'response_type')
+
+    def configure(self):
+        super(AuthorizationRequest, self).validate()
+
+        if 'client_id' in self.parameters:
+            credentials = ClientCredentials(self.parameters['client_id'],
+                                            self.parameters.get('client_secret'))
+            self.client = Client(credentials)
+        else:
+            self.client = None
+
+        self.response_type = self.parameters.get('response_type')
+        self.scope = self.parameters.get('scope')
+        self.redirect_uri = self.parameters.get('redirect_uri')
+
+        if not self._has_required_parameters():
+            raise errors.InvalidAuthorizationRequestError(self)
+
+        if self.client is None:
+            raise UnknownClientError(self.client)
+        elif not self.client.is_registered():
+            raise UnknownClientError(self.client)
+        elif not self.client.is_authorized():
+            raise UnauthorizedClientError(self.client)
+
+        if self.response_type != 'code':
+            raise errors.UnsupportedResponseTypeError(self)
+
+
+def get_credentials_by_method(method, data):
+    raise errors.UnknownAuthenticationMethod(method)
