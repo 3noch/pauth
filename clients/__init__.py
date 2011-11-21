@@ -1,4 +1,4 @@
-from pauth.conf import config
+from pauth.conf import _middleware
 
 
 class Client(object):
@@ -6,7 +6,7 @@ class Client(object):
         self.credentials = credentials
 
     def is_registered(self):
-        return config.clients.is_registered(self.id)
+        return _middleware.client_is_registered(self.id)
 
     def is_authorized(self):
-        return config.clients.is_authorized(self.id, self.secret)
+        return _middleware.client_is_authorized(self.id, self.secret)

@@ -1,23 +1,23 @@
+from authorization import get_credentials_by_method
 import errors
 from pauth.clients import Client
 from pauth.clients.errors import UnauthorizedClientError, UnknownClientError
-from pauth.conf import config
+from pauth.conf import _middleware
 from pauth.credentials import ClientCredentials
+
+
+def OAuthRequest(request):
+    """
+    A factory for generating Request objects from a library-user's request.
+    This factory uses the global middleware configuration to call a adapter
+    function defined by the library-user that converts their own requests
+    into an OAuthRequest that our library will understand.
+    """
+    return _middleware.adapt_request(request)
 
 
 class Request(object):
     required_parameters = ()
-
-    def __new__(cls, request):
-        """
-        We need to take the library-user's request and transform it into something
-        our library understands. We'll use an adapter function that's setup in the
-        global config to do this transformation. The library-user will need to
-        define this adapter, but it will usually be configured by some framework
-        plugin, like a Django middleware layer or something. Ideally, the library-
-        user won't have to mess with this very often (if ever).
-        """
-        return config.requests.adapter(request)
 
     def __init__(self, method='GET', headers=None, parameters=None):
         """
@@ -36,11 +36,6 @@ class Request(object):
         self.parameters = parameters or {}
 
         self.state = self.parameters.get('state')
-
-        self.configure()  # finish configuring
-
-    def configure():
-        pass
 
     def _has_required_parameters(self):
         """
@@ -66,20 +61,25 @@ class Request(object):
                      if k.lower() == header.lower()), None)
 
     def get_credentials(self):
+        """
+        Returns Credentials object created from the information provided in the HTTP
+        `Authorization` header, or `None` if this information is absent or unrecognized.
+        """
         auth_header = self.get_header('Authorization')
 
-        if auth_header is not None:
+        try:
             method, data = auth_header.split(' ', 1)
-            return get_credentials_by_method(method.strip(), data.strip())
-        else:
+        except ValueError:
             return None
+
+        return get_credentials_by_method(method.strip(), data.strip())
 
 
 class AuthorizationRequest(Request):
     required_parameters = ('client_id', 'response_type')
 
-    def configure(self):
-        super(AuthorizationRequest, self).validate()
+    def __init__(self, method='GET', headers=None, parameters=None):
+        super(AuthorizationRequest, self).__init__(method, headers, parameters)
 
         if 'client_id' in self.parameters:
             credentials = ClientCredentials(self.parameters['client_id'],
@@ -104,7 +104,3 @@ class AuthorizationRequest(Request):
 
         if self.response_type != 'code':
             raise errors.UnsupportedResponseTypeError(self)
-
-
-def get_credentials_by_method(method, data):
-    raise errors.UnknownAuthenticationMethod(method)

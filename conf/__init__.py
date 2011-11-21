@@ -1,3 +1,4 @@
+from pauth.requests import authorization
 from errors import UnconfiguredError
 
 
@@ -6,98 +7,46 @@ def _unconfigured():
     Raises an UnconfiguredError whenever its called. Its meant to just
     flag the library-user that something's not configured right.
     """
-    raise UnconfiguredError()
+    raise UnconfiguredError('This middleware configuration hasn\'t been configured yet. Did you forget to call `pauth.conf.initialize()`?')
 
 
-class Configuration(object):
-    """
-    A base configuration class. It doesn't do anything yet. So far it
-    just serves to provide hierarchy.
-    """
-    pass
-
-
-class PauthConfiguration(Configuration):
-    """
-    The base Pauth configuration class. There should only be one of
-    these! Why not use the Singleton pattern? Because Python doesn't
-    have very good ways to implement that. Just don't break the rules.
-    """
+class PauthMiddleware(object):
     def __init__(self):
-        self.clients = ClientConfiguration()
-        self.requests = RequestConfiguration()
-        self.responses = ResponseConfiguration()
-        self.scopes = ScopeConfiguration()
+        self.credentials_readers = {}
+
+    def client_is_registered(self, id):
+        _unconfigured()
+
+    def client_is_authorized(self, id, secret):
+        _unconfigured()
+
+    def client_has_scope(self, id, scope):
+        _unconfigured()
+
+    def adapt_request(self, request):
+        _unconfigured()
+
+    def adapt_response(self, response):
+        _unconfigured()
+
+    def scope_exists(self, scope):
+        _unconfigured()
+
+    def set_credentials_reader(self, method, reader):
+        self.credentials_readers[method.lower()] = method
+
+    def get_credentials_reader(self, method):
+        return self.credentials_readers.get(method.lower())
 
 
-class ClientConfiguration(Configuration):
-    """
-    Configuration class for clients. The only instance of this should
-    be in a member variable of PauthConfiguration.
-    """
-    def __init__(self):
-        self.is_registered = _unconfigured
-        self.is_authorized = _unconfigured
+_middleware = None
 
 
-class RequestConfiguration(Configuration):
-    """
-    Configuration class for requests. The only instance of this should
-    be in a member variable of PauthConfiguration.
-    """
-    def __init__(self):
-        self.adapter = _unconfigured
-        self._credentials_readers = {}
+def initialize(middleware=None):
+    if middleware is not None:
+        _middleware = PauthMiddleware()
+    else:
+        _middleware = middleware
 
-    def set_credentials_reader(method, reader):
-        self._credentials_readers[method.lower()] = reader
-
-    def get_credentials_reader(method):
-        return self._credentials_readers.get(method.lower())
-
-
-class ResponseConfiguration(Configuration):
-    """
-    Configuration class for responses. The only instance of this should
-    be in a member variable of PauthConfiguration.
-    """
-    def __init__(self):
-        self.adapter = _unconfigured
-
-
-class ScopeConfiguration(Configuration):
-    """
-    Configuration class for scopes. The only instance of this should
-    be in a member variable of PauthConfiguration.
-    """
-    def __init__(self):
-        self.is_scope = _unconfigured
-        self.has_scope = _unconfigured
-
-
-# `config` is the global configuration class. It's meant to be
-# used by the library-user to hook into his own setup.
-config = PauthConfiguration()
-
-
-# These are decorators to make defining the configuration hooks
-# really simple.
-def defines_client_is_registered(f):
-    config.clients.is_registered = f
-    return f
-
-
-def defines_client_is_authorized(f):
-    config.clients.is_authorized = f
-    return f
-
-
-def defines_request_adapter(f):
-    config.requests.adapter = f
-    return f
-
-
-def defines_response_adapter(f):
-    config.responses.adapter = f
-    return f
-
+    _middleware.set_credentials_reader('Basic', authorization.get_credentials_from_basic)
+    _middleware.set_credentials_reader('Mac', authorization.get_credentials_from_mac)
