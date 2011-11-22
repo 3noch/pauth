@@ -1,4 +1,4 @@
-from errors import DEFAULT_CONTENT_TYPE, MOVED_PERMANENTLY
+from constants import DEFAULT_CONTENT_TYPE, MOVED_PERMANENTLY
 
 
 class Response(object):
