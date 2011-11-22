@@ -45,3 +45,11 @@ class UnknownAuthenticationMethod(RequestError):
 
     def __repr__(self):
         return 'Unknown authentication method: {method}'.format(method=self.method)
+
+
+class MalformedAuthenticationCredentials(RequestError):
+    def __init__(self, data):
+        self.data = data
+
+    def __repr__(self):
+        return 'Malformed authentication credentials: {data}'.format(data=self.data)
