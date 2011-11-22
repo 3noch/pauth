@@ -2,7 +2,6 @@ from authorization import get_credentials_by_method
 import errors
 from pauth.clients import Client
 from pauth.clients.errors import UnauthorizedClientError, UnknownClientError
-from pauth.conf import _middleware
 from pauth.credentials import ClientCredentials
 
 
@@ -13,7 +12,8 @@ def OAuthRequest(request):
     function defined by the library-user that converts their own requests
     into an OAuthRequest that our library will understand.
     """
-    return _middleware.adapt_request(request)
+    from pauth.conf import middleware
+    return middleware.adapt_request(request)
 
 
 class Request(object):

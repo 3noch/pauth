@@ -1,9 +1,9 @@
 from errors import UnknownAuthenticationMethod
-from pauth.conf import _middleware
 
 
 def get_credentials_by_method(method, data):
-    reader = _middleware.get_credentials_reader(method)
+    from pauth.conf import middleware
+    reader = middleware.get_credentials_reader(method)
     if reader is None:
         raise UnknownAuthenticationMethod(method)
     else:

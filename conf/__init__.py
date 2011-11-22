@@ -13,7 +13,7 @@ def _unconfigured():
 
 class PauthMiddleware(object):
     def __init__(self):
-        self.credentials_readers = {}
+        self._credentials_readers = {}
 
     def client_is_registered(self, id):
         _unconfigured()
@@ -34,19 +34,19 @@ class PauthMiddleware(object):
         _unconfigured()
 
     def set_credentials_reader(self, method, reader):
-        self.credentials_readers[method.lower()] = method
+        self._credentials_readers[method.lower()] = reader
 
     def get_credentials_reader(self, method):
-        return self.credentials_readers.get(method.lower())
+        return self._credentials_readers.get(method.lower())
 
 
 # The global middleware object. This is used internally by the library but is configured by the
 # library-user. It allows the library-user to hook into the library for his specific use-case or
 # framework.
-_middleware = None
+middleware = None
 
 
-def initialize(middleware=None):
+def initialize(new_middleware=None):
     """
     Initializes the library. This is the first point-of-entry for the library user. Before the
     library can be used, the library-user must call this function. Calling without arguments will
@@ -54,10 +54,11 @@ def initialize(middleware=None):
     `middleware` argument will initialize the library with a custom subclassed or duck-typed
     middleware.
     """
-    if middleware is not None:
-        _middleware = PauthMiddleware()
+    global middleware
+    if new_middleware is None:
+        middleware = PauthMiddleware()
     else:
-        _middleware = middleware
+        middleware = new_middleware
 
 
 def set_default_credentials_readers():
@@ -66,5 +67,5 @@ def set_default_credentials_readers():
     doesn't want to provide his own credentials readers for common authorization methods like
     Basic and MAC.
     """
-    _middleware.set_credentials_reader('Basic', authorization.get_credentials_from_basic)
-    _middleware.set_credentials_reader('Mac', authorization.get_credentials_from_mac)
+    middleware.set_credentials_reader('Basic', authorization.get_credentials_from_basic)
+    middleware.set_credentials_reader('Mac', authorization.get_credentials_from_mac)
