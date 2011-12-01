@@ -1,6 +1,7 @@
 from authorization import get_credentials_by_method
 import errors
 from pauth.clients.errors import UnauthorizedClientError, UnknownClientError
+from pauth.scopes.errors import UnknownScopeError, ScopeDeniedError
 
 
 def MakeOAuthRequest(cls, request):
@@ -23,11 +24,6 @@ class Request(object):
         request. The library-user will have to define an adapter to transform their
         requests into this interface (see `__new__()` above). But this interface
         is pretty generic and straightforward, so it shouldn't be a problem.
-
-        This constructor also does some initial parsing of the request to get
-        OAuth-specific parameters. Various subclasses of this class will have
-        different rules for how the request ought to look. Depending on those rules
-        (defined in the `validate()` method), this constructor can throw errors.
         """
         self.method = method
         self.headers = headers or {}
@@ -70,34 +66,65 @@ class Request(object):
         except (ValueError, AttributeError):
             return None
 
-        return get_credentials_by_method(method.strip(), data.strip())
+        try:
+            return get_credentials_by_method(method.strip(), data.strip())
+        except errors.UnknownAuthenticationMethod as e:
+            # Intercept any errors raised when getting credentials and attach state and
+            # redirection info for this request so that the error will generate the
+            # correct response.
+            e.state = self.state
+            e.redirect_uri = self.redirect_uri
+            raise e
 
 
 class AuthorizationRequest(Request):
     required_parameters = ('client_id', 'response_type')
 
     def __init__(self, method='GET', headers=None, parameters=None):
-        from pauth.conf import middleware
-
         super(AuthorizationRequest, self).__init__(method, headers, parameters)
+        self.redirect_uri = None
+        self.response_type = None
+        self.client = None
+        self.credentials = None
+        self.scopes = {}
+        self.redirect_uri = self.parameters.get('redirect_uri')
 
         if not self._has_required_parameters():
-            raise errors.InvalidAuthorizationRequestError(self)
+            raise errors.InvalidAuthorizationRequestError(self, state=self.state, redirect_uri=self.redirect_uri)
+
+        self._extract_response_type()
+        self._extract_client()
+        self._extract_scopes()
+
+    def _extract_response_type(self):
+        self.response_type = self.parameters.get('response_type')
+
+        if self.response_type != 'code':
+            raise errors.UnsupportedResponseTypeError(self, state=self.state, redirect_uri=self.redirect_uri)
+
+    def _extract_client(self):
+        from pauth.conf import middleware
 
         self.client = middleware.get_client(self.parameters.get('client_id', ''))
         self.credentials = self.get_credentials()
 
         if self.client is None:
-            raise UnknownClientError(self.client)
+            raise UnknownClientError(self.client, state=self.state, redirect_uri=self.redirect_uri)
         elif not middleware.client_is_registered(self.client):
-            raise UnknownClientError(self.client)
+            raise UnknownClientError(self.client, state=self.state, redirect_uri=self.redirect_uri)
         elif not middleware.client_is_authorized(self.client, self.credentials):
-            raise UnauthorizedClientError(self.client)
+            raise UnauthorizedClientError(self.client, state=self.state, redirect_uri=self.redirect_uri)
 
-        self.response_type = self.parameters.get('response_type')
+    def _extract_scopes(self):
+        from pauth.conf import middleware
 
-        if self.response_type != 'code':
-            raise errors.UnsupportedResponseTypeError(self)
+        scope_ids = self.parameters.get('scope')
 
-        self.scope = self.parameters.get('scope')
-        self.redirect_uri = self.parameters.get('redirect_uri')
+        for id in scope_ids:
+            scope = middleware.get_scope(id)
+            if scope is None:
+                raise UnknownScopeError(scope, state=self.state, redirect_uri=self.redirect_uri)
+            elif not middleware.client_has_scope(self.client, scope):
+                raise ScopeDeniedError(scope, state=self.state, redirect_uri=self.redirect_uri)
+            else:
+                self.scopes[id] = scope

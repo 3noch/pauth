@@ -20,9 +20,22 @@ class OAuthError(PauthError):
     """
     id = None
 
+    def __init__(self, state=None, redirect_uri=None):
+        """
+        Initializes an OAuthError. The code that raises this error may
+        provide a `state` and a `redirect_uri` that will be used to
+        form the redirection response back to the client whose request
+        caused the error.
+        """
+        self.state = state
+        self.redirect_uri = redirect_uri
+
     def get_response(self):
         from pauth.conf import middleware
-        return middleware.adapt_response(ErrorResponse(id, unicode(self)))
+        return middleware.adapt_response(ErrorResponse(id=self.id,
+                                                       description=unicode(self),
+                                                       state=self.state,
+                                                       redirect_uri=self.redirect_uri))
 
-    def __repr__(self):
+    def __str__(self):
         return 'Generic OAuth error'

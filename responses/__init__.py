@@ -1,3 +1,5 @@
+from urllib import urlencode
+
 from constants import DEFAULT_CONTENT_TYPE, MOVED_PERMANENTLY
 
 
@@ -8,20 +10,37 @@ class Response(object):
         self.headers = headers or {}
         self.content_type = content_type
 
-    def __repr__(self):
+    def __str__(self):
         return '<{class_name}: {status}>'.format(
             class_name=self.__class__.__name__,
             status=self.status)
 
 
 class ErrorResponse(Response):
-    def __init__(self, id, description=None, uri=None):
+    def __init__(self, id, description=None, uri=None, state=None, redirect_uri=None):
+        redirect_header = None
+        parameters = {'error': id,
+                      'error_description': description,
+                      'error_uri': uri,
+                      'state': state}
+
+        if redirect_uri is not None:
+            full_uri = '{redirect_uri}?{parameters}'.format(
+                redirect_uri=redirect_uri.rstrip('? '),
+                parameters=urlencode({k: v for k, v in parameters.items()
+                                      if v is not None}))
+            redirect_header = {'Location': full_uri}
+
+        super(ErrorResponse, self).__init__(content=description,
+                                            status=MOVED_PERMANENTLY,
+                                            headers=redirect_header)
         self.id = id
         self.description = description
         self.uri = uri
-        super(ErrorResponse, self).__init__(MOVED_PERMANENTLY, description)
+        self.state = state
+        self.redirect_uri = redirect_uri
 
-    def __repr__(self):
+    def __str__(self):
         return '<{class_name}: {error}>'.format(
             class_name=self.__class__.__name__,
             error=self.id)

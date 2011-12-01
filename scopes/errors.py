@@ -8,10 +8,12 @@ class ScopeError(OAuthError):
     id = 'invalid_scope'
     description = 'Scope error: {scope}'
 
-    def __init__(self, scope):
+    def __init__(self, scope, state=None, redirect_uri=None):
+        super(ScopeError, self).__init__(state=state,
+                                         redirect_uri=redirect_uri)
         self.scope = scope
 
-    def __repr__(self):
+    def __str__(self):
         return self.description.format(scope=self.scope)
 
 
