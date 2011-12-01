@@ -21,7 +21,8 @@ class OAuthError(PauthError):
     id = None
 
     def get_response(self):
-        return ErrorResponse(id, unicode(self))
+        from pauth.conf import middleware
+        return middleware.adapt_response(ErrorResponse(id, unicode(self)))
 
     def __repr__(self):
         return 'Generic OAuth error'

@@ -2,7 +2,7 @@ from constants import DEFAULT_CONTENT_TYPE, MOVED_PERMANENTLY
 
 
 class Response(object):
-    def __init__(self, status, content, headers=None, content_type=DEFAULT_CONTENT_TYPE):
+    def __init__(self, content, status, headers=None, content_type=DEFAULT_CONTENT_TYPE):
         self.status = status
         self.content = content
         self.headers = headers or {}

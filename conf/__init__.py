@@ -15,23 +15,29 @@ class PauthMiddleware(object):
     def __init__(self):
         self._credentials_readers = {}
 
-    def client_is_registered(self, id):
-        _unconfigured()
-
-    def client_is_authorized(self, id, secret):
-        _unconfigured()
-
-    def client_has_scope(self, id, scope):
-        _unconfigured()
-
-    def adapt_request(self, request):
+    def adapt_request(self, cls, request):
         _unconfigured()
 
     def adapt_response(self, response):
         _unconfigured()
 
-    def scope_exists(self, scope):
+    def client_is_registered(self, client):
         _unconfigured()
+
+    def client_is_authorized(self, client, credentials=None):
+        _unconfigured()
+
+    def client_has_scope(self, client, scope):
+        _unconfigured()
+
+    def get_client(self, id):
+        return id
+
+    def get_scope(self, id):
+        return id
+
+    def scope_exists(self, id):
+        return self.get_scope(id) is not None
 
     def set_credentials_reader(self, method, reader):
         self._credentials_readers[method.lower()] = reader

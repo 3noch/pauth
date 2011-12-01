@@ -1,11 +1,9 @@
 from authorization import get_credentials_by_method
 import errors
-from pauth.clients import Client
 from pauth.clients.errors import UnauthorizedClientError, UnknownClientError
-from pauth.credentials import ClientCredentials
 
 
-def OAuthRequest(request):
+def MakeOAuthRequest(cls, request):
     """
     A factory for generating Request objects from a library-user's request.
     This factory uses the global middleware configuration to call a adapter
@@ -13,7 +11,7 @@ def OAuthRequest(request):
     into an OAuthRequest that our library will understand.
     """
     from pauth.conf import middleware
-    return middleware.adapt_request(request)
+    return middleware.adapt_request(cls, request)
 
 
 class Request(object):
@@ -69,7 +67,7 @@ class Request(object):
 
         try:
             method, data = auth_header.split(' ', 1)
-        except ValueError:
+        except (ValueError, AttributeError):
             return None
 
         return get_credentials_by_method(method.strip(), data.strip())
@@ -79,28 +77,27 @@ class AuthorizationRequest(Request):
     required_parameters = ('client_id', 'response_type')
 
     def __init__(self, method='GET', headers=None, parameters=None):
+        from pauth.conf import middleware
+
         super(AuthorizationRequest, self).__init__(method, headers, parameters)
-
-        if 'client_id' in self.parameters:
-            credentials = ClientCredentials(self.parameters['client_id'],
-                                            self.parameters.get('client_secret'))
-            self.client = Client(credentials)
-        else:
-            self.client = None
-
-        self.response_type = self.parameters.get('response_type')
-        self.scope = self.parameters.get('scope')
-        self.redirect_uri = self.parameters.get('redirect_uri')
 
         if not self._has_required_parameters():
             raise errors.InvalidAuthorizationRequestError(self)
 
+        self.client = middleware.get_client(self.parameters.get('client_id', ''))
+        self.credentials = self.get_credentials()
+
         if self.client is None:
             raise UnknownClientError(self.client)
-        elif not self.client.is_registered():
+        elif not middleware.client_is_registered(self.client):
             raise UnknownClientError(self.client)
-        elif not self.client.is_authorized():
+        elif not middleware.client_is_authorized(self.client, self.credentials):
             raise UnauthorizedClientError(self.client)
+
+        self.response_type = self.parameters.get('response_type')
 
         if self.response_type != 'code':
             raise errors.UnsupportedResponseTypeError(self)
+
+        self.scope = self.parameters.get('scope')
+        self.redirect_uri = self.parameters.get('redirect_uri')
