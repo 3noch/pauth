@@ -77,11 +77,12 @@ class Request(object):
             raise e
 
 
-class AuthorizationRequest(Request):
+class BaseAuthorizationRequest(Request):
     required_parameters = ('client_id', 'response_type')
+    required_response_type = None
 
     def __init__(self, method='GET', headers=None, parameters=None):
-        super(AuthorizationRequest, self).__init__(method, headers, parameters)
+        super(BaseAuthorizationRequest, self).__init__(method, headers, parameters)
         self.redirect_uri = None
         self.response_type = None
         self.client = None
@@ -90,7 +91,7 @@ class AuthorizationRequest(Request):
         self.redirect_uri = self.parameters.get('redirect_uri')
 
         if not self._has_required_parameters():
-            raise errors.InvalidAuthorizationRequestError(self, state=self.state, redirect_uri=self.redirect_uri)
+            raise errors.InvalidAuthorizationRequestError(self)
 
         self._extract_response_type()
         self._extract_client()
@@ -99,32 +100,33 @@ class AuthorizationRequest(Request):
     def _extract_response_type(self):
         self.response_type = self.parameters.get('response_type')
 
-        if self.response_type != 'code':
-            raise errors.UnsupportedResponseTypeError(self, state=self.state, redirect_uri=self.redirect_uri)
+        if self.response_type != self.required_response_type:
+            raise errors.UnsupportedResponseTypeError(self)
 
     def _extract_client(self):
         from pauth.conf import middleware
 
-        self.client = middleware.get_client(self.parameters.get('client_id', ''))
+        client_id = self.parameters.get('client_id')
+        self.client = middleware.get_client(client_id or '')
         self.credentials = self.get_credentials()
 
         if self.client is None:
-            raise UnknownClientError(self.client, state=self.state, redirect_uri=self.redirect_uri)
+            raise UnknownClientError(self, client_id)
         elif not middleware.client_is_registered(self.client):
-            raise UnknownClientError(self.client, state=self.state, redirect_uri=self.redirect_uri)
-        elif not middleware.client_is_authorized(self.client, self.credentials):
-            raise UnauthorizedClientError(self.client, state=self.state, redirect_uri=self.redirect_uri)
+            raise UnknownClientError(self, client_id)
 
     def _extract_scopes(self):
         from pauth.conf import middleware
 
-        scope_ids = self.parameters.get('scope')
+        scope_ids = {}
+        if 'scope' in self.parameters:
+            scope_ids = self.parameters['scope'].split(' ')
 
         for id in scope_ids:
             scope = middleware.get_scope(id)
             if scope is None:
-                raise UnknownScopeError(scope, state=self.state, redirect_uri=self.redirect_uri)
+                raise UnknownScopeError(self, id)
             elif not middleware.client_has_scope(self.client, scope):
-                raise ScopeDeniedError(scope, state=self.state, redirect_uri=self.redirect_uri)
+                raise ScopeDeniedError(self, id)
             else:
                 self.scopes[id] = scope

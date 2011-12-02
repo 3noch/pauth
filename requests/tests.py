@@ -38,7 +38,3 @@ def test_get_credentials_from_basic_valid():
 @raises(errors.MalformedAuthenticationCredentials)
 def test_get_credentials_from_basic_invalid():
         authorization.get_credentials_from_basic('')
-
-
-def test_get_credentials_from_mac():
-    pass
