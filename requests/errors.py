@@ -103,9 +103,7 @@ class RequestedScopeError(RequestError):
     description = 'Scope error: {scope}'
 
     def __init__(self, request, scope_id):
-        super(RequestedScopeError, self).__init__(
-            state=request.state,
-            redirect_uri=request.redirect_uri)
+        super(RequestedScopeError, self).__init__(request=request)
         self.scope_id = scope_id
 
     def __str__(self):

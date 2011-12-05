@@ -1,7 +1,5 @@
 from authorization import get_credentials_by_method
 import errors
-from pauth.clients.errors import UnauthorizedClientError, UnknownClientError
-from pauth.scopes.errors import UnknownScopeError, ScopeDeniedError
 
 
 def MakeOAuthRequest(cls, request):
@@ -87,7 +85,7 @@ class BaseAuthorizationRequest(Request):
         self.response_type = None
         self.client = None
         self.credentials = None
-        self.scopes = {}
+        self.scopes = []
         self.redirect_uri = self.parameters.get('redirect_uri')
 
         if not self._has_required_parameters():
@@ -111,9 +109,9 @@ class BaseAuthorizationRequest(Request):
         self.credentials = self.get_credentials()
 
         if self.client is None:
-            raise UnknownClientError(self, client_id)
+            raise errors.UnknownClientError(self, client_id)
         elif not middleware.client_is_registered(self.client):
-            raise UnknownClientError(self, client_id)
+            raise errors.UnknownClientError(self, client_id)
 
     def _extract_scopes(self):
         from pauth.conf import middleware
@@ -125,8 +123,8 @@ class BaseAuthorizationRequest(Request):
         for id in scope_ids:
             scope = middleware.get_scope(id)
             if scope is None:
-                raise UnknownScopeError(self, id)
+                raise errors.UnknownScopeError(self, id)
             elif not middleware.client_has_scope(self.client, scope):
-                raise ScopeDeniedError(self, id)
+                raise errors.ScopeDeniedError(self, id)
             else:
-                self.scopes[id] = scope
+                self.scopes.append(scope)
