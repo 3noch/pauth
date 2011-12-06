@@ -1,4 +1,4 @@
-from pauth.conf import PauthMiddleware, initialize
+from pauth.conf import PauthMiddleware, initialize, set_default_credentials_readers
 
 
 class MockMiddleware(PauthMiddleware):
@@ -7,3 +7,4 @@ class MockMiddleware(PauthMiddleware):
 
 def setup_mock_middleware():
     initialize(MockMiddleware())
+    set_default_credentials_readers()

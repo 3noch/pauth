@@ -59,48 +59,34 @@ class Request(object):
         """
         auth_header = self.get_header('Authorization')
 
+        if auth_header is None:
+            return None
+
         try:
             method, data = auth_header.split(' ', 1)
-        except (ValueError, AttributeError):
+        except ValueError:
             return None
 
         try:
             return get_credentials_by_method(method.strip(), data.strip())
-        except errors.UnknownAuthenticationMethod as e:
+        except errors.UnknownAuthenticationMethod as error:
             # Intercept any errors raised when getting credentials and attach state and
             # redirection info for this request so that the error will generate the
             # correct response.
-            e.state = self.state
-            e.redirect_uri = self.redirect_uri
-            raise e
+            raise self._propagate_error(error)
+
+    def _propagate_error(self, error):
+        """
+        Allows the request class to attach pertinent information to an error before it
+        gets raised. This isn't just convenient but essential when the error needs to be
+        sent to the requester via the redirect URI that was provided in the request. This
+        method takes an error and returns a modified version of the error.
+        """
+        error.state = self.state
+        return error
 
 
-class BaseAuthorizationRequest(Request):
-    required_parameters = ('client_id', 'response_type')
-    required_response_type = None
-
-    def __init__(self, method='GET', headers=None, parameters=None):
-        super(BaseAuthorizationRequest, self).__init__(method, headers, parameters)
-        self.redirect_uri = None
-        self.response_type = None
-        self.client = None
-        self.credentials = None
-        self.scopes = []
-        self.redirect_uri = self.parameters.get('redirect_uri')
-
-        if not self._has_required_parameters():
-            raise errors.InvalidAuthorizationRequestError(self)
-
-        self._extract_response_type()
-        self._extract_client()
-        self._extract_scopes()
-
-    def _extract_response_type(self):
-        self.response_type = self.parameters.get('response_type')
-
-        if self.response_type != self.required_response_type:
-            raise errors.UnsupportedResponseTypeError(self)
-
+class RequestWithClientMixin():
     def _extract_client(self):
         from pauth.conf import middleware
 
@@ -113,6 +99,18 @@ class BaseAuthorizationRequest(Request):
         elif not middleware.client_is_registered(self.client):
             raise errors.UnknownClientError(self, client_id)
 
+
+class RequestWithResponseTypeMixin():
+    required_response_type = None
+
+    def _extract_response_type(self):
+        self.response_type = self.parameters.get('response_type')
+
+        if self.response_type != self.required_response_type:
+            raise errors.UnsupportedResponseTypeError(self)
+
+
+class RequestWithScopesMixin():
     def _extract_scopes(self):
         from pauth.conf import middleware
 
@@ -128,3 +126,34 @@ class BaseAuthorizationRequest(Request):
                 raise errors.ScopeDeniedError(self, id)
             else:
                 self.scopes.append(scope)
+
+
+class BaseAuthorizationRequest(Request,
+                               RequestWithClientMixin,
+                               RequestWithScopesMixin,
+                               RequestWithResponseTypeMixin):
+    required_parameters = ('client_id', 'response_type')
+
+    def __init__(self, method='GET', headers=None, parameters=None):
+        super(BaseAuthorizationRequest, self).__init__(method, headers, parameters)
+        self.redirect_uri = None
+        self.response_type = None
+        self.client = None
+        self.credentials = None
+        self.scopes = []
+        self.redirect_uri = self.parameters.get('redirect_uri')
+
+        if method != 'GET':
+            raise errors.InvalidAuthorizationRequestError(self)
+
+        if not self._has_required_parameters():
+            raise errors.InvalidAuthorizationRequestError(self)
+
+        self._extract_response_type()
+        self._extract_client()
+        self._extract_scopes()
+
+    def _propagate_error(self, error):
+        error = super(BaseAuthorizationRequest, self)._propagate_error(error)
+        error.redirect_uri = self.redirect_uri
+        return error
