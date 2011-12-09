@@ -133,10 +133,6 @@ INSTALLED_APPS = (
 )
 
 
-#--TESTING-- Add directory for pauth so we can import it later on.
-import sys
-sys.path.append('../..')
-
 from pauth import conf
 
 
