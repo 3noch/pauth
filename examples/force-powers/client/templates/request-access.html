@@ -1,0 +1,37 @@
+{% extends "request.html" %}
+
+
+{% block page-title %}Authorization Request{% endblock %}
+{% block page-heading %}Authorization Request{% endblock %}
+{% block image-source %}{{ STATIC_URL }}img/{% if public %}unlocked.png{% else %}locked.png{% endif %}{% endblock %}
+
+{% block content %}
+  <p><label for="form">Select the force powers you'd like to have:</label></p>
+
+  <ul class="form-item">
+    {% for name, description in all_scopes.items %}
+      <li>
+        <label>
+          <input type="checkbox" id="scope" name="scope" value="{{ name }}" />
+          {{ description }}
+        </label>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <p id="client-powers">
+    {% if client_scopes %}
+      This client is allowed to request the following force powers:
+    {% for name, description in client_scopes.items %}
+      {% if forloop.last %} and {% endif %}<strong>{{ description }}</strong>{% if forloop.last %}.{% else %}, {% endif %}
+    {% endfor %}
+    {% else %}
+      This client is not allowed to request any force powers.
+    {% endif %}
+  </p>
+
+  <input type="hidden" name="state" value="{{ state }}" />
+  <input type="hidden" name="client_id" value="{{ client_id }}" />
+{% endblock %}
+
+{% block submit-label %}Request These Powers{% endblock %}

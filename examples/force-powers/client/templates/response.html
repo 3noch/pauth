@@ -1,0 +1,13 @@
+{% extends "base-client.html" %}
+
+{% block page-title %}Authorization Response{% endblock %}
+
+{% block body %}
+  <div id="middle">
+    <img id="middle-right" src="{% block image-source %}{% endblock %}" />
+
+    <div id="middle-left">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "invalid.html" %}
+
+{% block page-title %}Unregistered Client{% endblock %}
+
+{% block content %}
+  <p>A unrecognized client with an identifier of <em>{{ client_id }}</em> requested the following force powers.</p>
+  <ul>
+    {% for scope in scopes %}<li>{{ scope }}</li>{% endfor %}
+  </ul>
+  <p><strong>This request must be denied.</strong></p>
+{% endblock %}

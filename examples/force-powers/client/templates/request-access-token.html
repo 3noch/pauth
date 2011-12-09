@@ -1,0 +1,23 @@
+{% extends "request.html" %}
+
+
+{% block page-title %}Authorization Granted{% endblock %}
+{% block page-heading %}Authorization Granted{% endblock %}
+{% block image-source %}{{ STATIC_URL }}img/tick.png{% endblock %}
+
+{% block content %}
+  <p>The force powers you requested were <strong>granted</strong>.</p>
+  <p>Your <em>authorization code</em> is <strong>{{ code }}</strong>.</p>
+
+  <p>
+    <label for="form">
+      Click <strong>Request an Access Token</strong> below to get an <em>access token</em>
+      that will allow you to use your powers. You must request it soon or the server may
+      invalidate your <em>authorization code</em>.
+    </label>
+  </p>
+
+  <input type="hidden" name="code" value="{{ code }}" />
+{% endblock %}
+
+{% block submit-label %}Request an Access Token{% endblock %}

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+cd `dirname $0`
+
+OLD_DB=:main:
+if [ -e $OLD_DB ]; then
+    echo "Removing old database..."
+    rm $OLD_DB
+    echo "Done."
+    echo
+fi
+
+echo "Configuring database..."
+python manage.py syncdb
+echo "Done."
+
+echo
+echo "Loading initial data..."
+python manage.py loaddata initial-data.json
+echo "Done."
+
+exit

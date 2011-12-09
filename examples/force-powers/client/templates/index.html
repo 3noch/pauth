@@ -1,0 +1,15 @@
+{% extends "base-client.html" %}
+
+{% block page-title %}Clients{% endblock %}
+{% block page-heading %}Clients{% endblock %}
+
+{% block body %}
+  <div id="middle">
+    <img id="middle-right" src="{{ STATIC_URL }}img/client.png" />
+    <ul id="middle-left">
+      <li><a href="public/">Public Client</a></li>
+      <li><a href="confidential/">Confidential Client</a></li>
+      <li><a href="unregistered/">Unregistered Client</a></li>
+    </ul>
+  </div>
+{% endblock %}

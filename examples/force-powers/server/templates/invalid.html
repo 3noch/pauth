@@ -1,0 +1,14 @@
+{% extends "request.html" %}
+
+{% block page-title %}Invalid Request{% endblock %}
+{% block page-heading %}Invalid Request{% endblock %}
+{% block image-source %}{{ STATIC_URL }}img/error.png{% endblock %}
+
+{% block buttons %}
+  <form action="{{ form_action }}" method="get">
+    {% if state %}<input type="hidden" name="state" value="{{ state }}" />{% endif %}
+    <input type="hidden" name="client_id" value="{{ client_id }}" />
+    <input type="hidden" name="redirect_uri" value="{{ redirect_uri }}" />
+    <button class="single-button" type="submit" name="grant" value="false">Deny</button>
+  </form>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "invalid.html" %}
+
+{% block page-title %}Invalid Authorization Request{% endblock %}
+{% block page-heading %}Invalid Authorization Request{% endblock %}
+
+{% block content %}
+  <p><strong>{{ client_name }}</strong> made a request for nothing. That was dumb.</p>
+  <p><strong>This request must be denied.</strong></p>
+{% endblock %}

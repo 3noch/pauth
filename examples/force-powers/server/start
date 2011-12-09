@@ -1,0 +1,11 @@
+#!/bin/bash
+
+PORT=8000
+
+echo "Server is hosted at http://localhost:$PORT/"
+echo
+
+cd `dirname $0`
+python manage.py runserver $PORT
+
+exit

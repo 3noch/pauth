@@ -1,0 +1,11 @@
+{% extends "invalid.html" %}
+
+{% block page-title %}Invalid Request{% endblock %}
+
+{% block content %}
+  <p><strong>{{ client_name }}</strong> has requested the following force powers that it's not allowed to have:</p>
+  <ul>
+    {% for scope in scopes %}<li>{{ scope }}</li>{% endfor %}
+  </ul>
+  <p><strong>This request must be denied.</strong></p>
+{% endblock %}

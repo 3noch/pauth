@@ -1,0 +1,15 @@
+{% extends "base-server.html" %}
+
+{% block page-title %}Authorization Request{% endblock %}
+
+{% block body %}
+  <div id="middle">
+    <img id="middle-right" src="{% block image-source %}{% endblock %}" />
+    <div id="middle-left">
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+  <div id="bottom">
+    {% block buttons %}{% endblock %}
+  </div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base-client.html" %}
+
+{% block body %}
+  <form id="form" action="{{ form_action }}" method="get">
+    <div id="middle">
+      <img id="middle-right" src="{% block image-source %}{% endblock %}" />
+      {% block content %}{% endblock %}
+    </div>
+    <div id="bottom">
+      <button class="single-button" type="submit">{% block submit-label %}{% endblock %}</button>
+    </div>
+  </form>
+{% endblock %}

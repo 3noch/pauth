@@ -1,0 +1,22 @@
+{% extends "request.html" %}
+
+{% block page-title %}Authorization Request{% endblock %}
+{% block page-heading %}Authorization Request{% endblock %}
+{% block image-source %}{{ STATIC_URL }}img/alert.png{% endblock %}
+
+{% block content %}
+  <p><strong>{{ client_name }}</strong> is requesting the following force powers:</p>
+  <ul>
+    {% for scope in scopes %}<li>{{ scope }}</li>{% endfor %}
+  </ul>
+{% endblock %}
+
+{% block buttons %}
+  <form action="{{ form_action }}" method="get">
+    {% if state %}<input type="hidden" name="state" value="{{ state }}" />{% endif %}
+    <input type="hidden" name="client_id" value="{{ client_id }}" />
+    <input type="hidden" name="redirect_uri" value="{{ redirect_uri }}" />
+    <button class="half-button" type="submit" name="grant" value="true">Grant</button>
+    <button class="half-button" type="submit" name="grant" value="false">Deny</button>
+  </form>
+{% endblock %}

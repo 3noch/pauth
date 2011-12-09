@@ -1,0 +1,10 @@
+{% extends "response.html" %}
+
+{% block page-title %}Authorization Error{% endblock %}
+{% block page-heading %}Authorization Error{% endblock %}
+{% block image-source %}{{ STATIC_URL }}img/error.png{% endblock %}
+
+{% block content %}
+  <p>There was an error trying to complete your request for force powers.</p>
+  <blockquote>{{ error }}</blockquote>
+{% endblock %}

@@ -1,0 +1,102 @@
+[
+    {
+        "pk": 1,
+        "model": "clients.redirecturi",
+        "fields": {
+            "uri": "http://localhost:8001/confidential/authorize/response"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "clients.redirecturi",
+        "fields": {
+            "uri": "http://localhost:8001/public/authorize/response"
+        }
+    },
+    {
+        "pk": "a-public-client",
+        "model": "clients.client",
+        "fields": {
+            "is_public": true,
+            "secret": "don't-tell-anyone!",
+            "redirect_uris": [
+                2
+            ],
+            "name": "Public Client",
+            "allowed_scopes": [
+                "alchaka",
+                "art-of-movement",
+                "breath-control",
+                "flashburn"
+            ]
+        }
+    },
+    {
+        "pk": "a-confidential-client",
+        "model": "clients.client",
+        "fields": {
+            "is_public": false,
+            "secret": "ohh-i'm-confidential...",
+            "redirect_uris": [
+                1
+            ],
+            "name": "Confidential Client",
+            "allowed_scopes": [
+                "alchaka",
+                "art-of-movement",
+                "force-choke",
+                "force-ghost",
+                "force-lightning"
+            ]
+        }
+    },
+    {
+        "pk": "alchaka",
+        "model": "scopes.scope",
+        "fields": {
+            "description": "Alchaka"
+        }
+    },
+    {
+        "pk": "art-of-movement",
+        "model": "scopes.scope",
+        "fields": {
+            "description": "Art of movement"
+        }
+    },
+    {
+        "pk": "force-lightning",
+        "model": "scopes.scope",
+        "fields": {
+            "description": "Force lightning"
+        }
+    },
+    {
+        "pk": "force-choke",
+        "model": "scopes.scope",
+        "fields": {
+            "description": "Force choke"
+        }
+    },
+    {
+        "pk": "force-ghost",
+        "model": "scopes.scope",
+        "fields": {
+            "description": "Force ghost"
+        }
+    },
+    {
+        "pk": "breath-control",
+        "model": "scopes.scope",
+        "fields": {
+            "description": "Breath control"
+        }
+    },
+    {
+        "pk": "flashburn",
+        "model": "scopes.scope",
+        "fields": {
+            "description": "Flashburn"
+        }
+    }
+]
