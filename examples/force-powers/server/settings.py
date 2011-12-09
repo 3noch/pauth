@@ -132,4 +132,3 @@ INSTALLED_APPS = (
     'clients',
     'scopes',
 )
-

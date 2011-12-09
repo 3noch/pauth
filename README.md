@@ -28,3 +28,11 @@ Pauth can be tested with [nose][] like this:
   [nose]: http://readthedocs.org/docs/nose/en/latest/
 
 
+Dependencies
+============
+
+Dependencies can be installed with
+
+    pip install -r requirements.txt
+
+* [nose](http://readthedocs.org/docs/nose/en/latest/) (optional - for testing)
