@@ -6,7 +6,6 @@ class AuthorizationCodeFlow():
         pass
 
 
-
 class AuthorizationRequest(BaseAuthorizationRequest):
     required_response_type = 'code'
 

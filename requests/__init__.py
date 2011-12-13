@@ -117,6 +117,9 @@ class RequestWithScopesMixin():
         scope_ids = {}
         if 'scope' in self.parameters:
             scope_ids = self.parameters['scope'].split(' ')
+ 
+        if len(scope_ids) == 0:
+            raise errors.NoScopeError(self)
 
         for id in scope_ids:
             scope = middleware.get_scope(id)

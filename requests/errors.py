@@ -102,12 +102,16 @@ class RequestedScopeError(RequestError):
     id = 'invalid_scope'
     description = 'Scope error: {scope}'
 
-    def __init__(self, request, scope_id):
+    def __init__(self, request, scope_id=None):
         super(RequestedScopeError, self).__init__(request=request)
         self.scope_id = scope_id
 
     def __str__(self):
         return self.description.format(scope=self.scope_id)
+
+
+class NoScopeError(RequestedScopeError):
+    description = 'No scope was requested'
 
 
 class UnknownScopeError(RequestedScopeError):
