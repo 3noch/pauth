@@ -115,10 +115,9 @@ class RequestWithScopesMixin():
         from pauth.conf import middleware
 
         scope_ids = {}
-        if 'scope' in self.parameters:
+        if self.parameters.get('scope'):
             scope_ids = self.parameters['scope'].split(' ')
- 
-        if len(scope_ids) == 0:
+        else:
             raise errors.NoScopeError(self)
 
         for id in scope_ids:

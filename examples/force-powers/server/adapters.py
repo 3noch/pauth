@@ -9,7 +9,9 @@ class Middleware(conf.PauthMiddleware):
     def adapt_request(self, cls, request):
         return cls(request.method,
                    self.get_standard_headers(request.META),
-                   request.GET if request.method == 'GET' else request.POST)
+                   dict(request.GET.items()
+                        if request.method == 'GET'
+                        else request.POST.items()))
 
     def adapt_response(self, response):
         from django.http import HttpResponse

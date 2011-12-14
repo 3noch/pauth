@@ -1,11 +1,12 @@
 #!/bin/bash
 
+HOST='localhost'
 PORT=8001
 
-echo "Client is hosted at http://localhost:$PORT/"
+echo "Client is hosted at http://$HOST:$PORT/"
 echo
 
 cd `dirname $0`
-python manage.py runserver $PORT
+python manage.py runserver $HOST:$PORT
 
 exit
