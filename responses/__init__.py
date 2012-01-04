@@ -1,6 +1,7 @@
+import httplib
 from urllib import urlencode
 
-from constants import DEFAULT_CONTENT_TYPE, MOVED_PERMANENTLY
+from constants import DEFAULT_CONTENT_TYPE
 
 
 class Response(object):
@@ -32,7 +33,7 @@ class ErrorResponse(Response):
             redirect_header = {'Location': full_uri}
 
         super(ErrorResponse, self).__init__(content=description,
-                                            status=MOVED_PERMANENTLY,
+                                            status=httplib.MOVED_PERMANENTLY,
                                             headers=redirect_header)
         self.id = id
         self.description = description
