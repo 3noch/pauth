@@ -35,6 +35,7 @@ class ErrorResponse(Response):
         super(ErrorResponse, self).__init__(content=description,
                                             status=httplib.MOVED_PERMANENTLY,
                                             headers=redirect_header)
+
         self.id = id
         self.description = description
         self.uri = uri

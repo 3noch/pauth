@@ -43,6 +43,12 @@ class UnsupportedResponseTypeError(RequestError):
             response_type=self.request.response_type or '[empty]')
 
 
+class UnsupportedGrantTypeError(RequestError):
+    def __str__(self):
+        return 'Unsupported grant type: {grant_type}'.format(
+            grant_type=self.request.grant_type or '[empty]')
+
+
 # -- Errors with request's authentication ---
 class RequestAuthenticationError(RequestError):
     pass

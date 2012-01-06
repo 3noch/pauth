@@ -15,6 +15,7 @@ def MakeOAuthRequest(cls, request):
 
 class Request(object):
     required_parameters = ()
+    allowed_methods = ('GET')
 
     def __init__(self, method='GET', headers=None, parameters=None):
         """
@@ -36,6 +37,33 @@ class Request(object):
         subclasses in order keep things DRY.
         """
         return all(r in self.parameters for r in self.required_parameters)
+
+    def _has_allowed_method(self):
+        """
+        Returns `True` if the request's method is in `self.allowed_methods`.
+        """
+        return self.method in self.allowed_methods
+
+    def _validate_method(self):
+        """
+        Raises an error if the request's method is not allowed.
+        """
+        if self._has_allowed_method():
+            raise errors.InvalidAuthorizationRequestError(self)
+
+    def _validate_required_parameters(self):
+        """
+        Raises an error if the request doesn't have all of its required parameters.
+        """
+        if not self._has_required_parameters():
+            raise errors.InvalidAuthorizationRequestError(self)
+
+    def _validate(self):
+        """
+        Raises error for anything about the request that isn't valid.
+        """
+        self._validate_method()
+        self._validate_required_parameters()
 
     def has_header(self, header):
         """
@@ -110,6 +138,16 @@ class RequestWithResponseTypeMixin():
             raise errors.UnsupportedResponseTypeError(self)
 
 
+class RequestWithGrantTypeMixin():
+    required_grant_type = None
+
+    def _extract_grant_type(self):
+        self.grant_type = self.parameters.get('grant_type')
+
+        if self.grant_type != self.required_grant_type:
+            raise errors.UnsupportedGrantTypeError(self)
+
+
 class RequestWithScopesMixin():
     def _extract_scopes(self):
         from pauth.conf import middleware
@@ -145,6 +183,28 @@ class BaseAuthorizationRequest(Request,
         self.scopes = []
         self.redirect_uri = self.parameters.get('redirect_uri')
 
+        self._extract_response_type()
+        self._extract_client()
+        self._extract_scopes()
+
+    def _propagate_error(self, error):
+        error = super(BaseAuthorizationRequest, self)._propagate_error(error)
+        error.redirect_uri = self.redirect_uri
+        return error
+
+
+class BaseAccessTokenRequest(Request,
+                             RequestWithGrantTypeMixin):
+    required_parameters = ('grant_type', 'code', 'redirect_uri')
+
+    def __init__(self, method='GET', headers=None, parameters=None):
+        super(BaseAuthorizationRequest, self).__init__(method, headers, parameters)
+        self.redirect_uri = None
+        self.response_type = None
+        self.client = None
+        self.credentials = None
+        self.redirect_uri = self.parameters.get('redirect_uri')
+
         if method != 'GET':
             raise errors.InvalidAuthorizationRequestError(self)
 
@@ -154,8 +214,3 @@ class BaseAuthorizationRequest(Request,
         self._extract_response_type()
         self._extract_client()
         self._extract_scopes()
-
-    def _propagate_error(self, error):
-        error = super(BaseAuthorizationRequest, self)._propagate_error(error)
-        error.redirect_uri = self.redirect_uri
-        return error

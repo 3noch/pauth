@@ -35,7 +35,6 @@ Now you can start the server like this:
 
 Configuring the Server
 ----------------------
-
 You can add your own clients, scopes, and redirection URIs to the
 server by going to the following URL (once the server is running):
 
@@ -57,10 +56,10 @@ into the `client` directory and run this:
 Once the client is running, go to this URL to use it:
 
     http://localhost:8001/
-    
+
+
 Dependencies
 ============
-
 Dependencies can be installed with
 
     pip install -r requirements.txt

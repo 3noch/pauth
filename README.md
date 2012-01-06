@@ -1,7 +1,6 @@
 Pauth
 =====
-
-Pauth is an easy-to-use, lightweight, extensible [OAuth][] library for 
+Pauth is an easy-to-use, lightweight, extensible [OAuth][] library for
 [Python][].
 
   - Easy-to-use: Pauth is straight to the point and lets you do minimal
@@ -19,20 +18,19 @@ Pauth is also *not anywhere near done yet!*
 
 Testing
 =======
-
 Pauth can be tested with [nose][] like this:
 
     $ cd pauth
     $ nosetests
 
-  [nose]: http://readthedocs.org/docs/nose/en/latest/
-
 
 Dependencies
 ============
-
 Dependencies can be installed with
 
     pip install -r requirements.txt
 
-* [nose](http://readthedocs.org/docs/nose/en/latest/) (optional - for testing)
+* [nose][] (optional - for testing)
+
+
+[nose]: http://readthedocs.org/docs/nose/en/latest/
