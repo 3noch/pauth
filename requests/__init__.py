@@ -1,5 +1,7 @@
 from authorization import get_credentials_by_method
 import errors
+import extractors
+import validators
 
 
 def MakeOAuthRequest(cls, request):
@@ -14,8 +16,8 @@ def MakeOAuthRequest(cls, request):
 
 
 class Request(object):
-    required_parameters = ()
-    allowed_methods = ('GET')
+    VALIDATORS = (validators.has_method(('GET')))
+    EXTRACTORS = ()
 
     def __init__(self, method='GET', headers=None, parameters=None):
         """
@@ -30,40 +32,20 @@ class Request(object):
 
         self.state = self.parameters.get('state')
 
-    def _has_required_parameters(self):
-        """
-        A simple utility function for checking to see if the request has all
-        the parameters defined in `required_parameters`. It's meant to be used by
-        subclasses in order keep things DRY.
-        """
-        return all(r in self.parameters for r in self.required_parameters)
-
-    def _has_allowed_method(self):
-        """
-        Returns `True` if the request's method is in `self.allowed_methods`.
-        """
-        return self.method in self.allowed_methods
-
-    def _validate_method(self):
-        """
-        Raises an error if the request's method is not allowed.
-        """
-        if self._has_allowed_method():
-            raise errors.InvalidAuthorizationRequestError(self)
-
-    def _validate_required_parameters(self):
-        """
-        Raises an error if the request doesn't have all of its required parameters.
-        """
-        if not self._has_required_parameters():
-            raise errors.InvalidAuthorizationRequestError(self)
-
     def _validate(self):
         """
-        Raises error for anything about the request that isn't valid.
+        Raises an error for anything about the request that isn't valid.
         """
-        self._validate_method()
-        self._validate_required_parameters()
+        for validator in self.VALIDATORS:
+            validator(self)
+
+    def _extract(self):
+        """
+        Extracts all of the necessary information from the request and
+        raises errors if problems occur.
+        """
+        for extractor in self.EXTRACTORS:
+            extractor(self)
 
     def has_header(self, header):
         """
@@ -114,78 +96,11 @@ class Request(object):
         return error
 
 
-class RequestWithClientMixin():
-    def _extract_client(self):
-        from pauth.conf import middleware
-
-        client_id = self.parameters.get('client_id')
-        self.client = middleware.get_client(client_id or '')
-        self.credentials = self.get_credentials()
-
-        if self.client is None:
-            raise errors.UnknownClientError(self, client_id)
-        elif not middleware.client_is_registered(self.client):
-            raise errors.UnknownClientError(self, client_id)
-
-
-class RequestWithResponseTypeMixin():
-    required_response_type = None
-
-    def _extract_response_type(self):
-        self.response_type = self.parameters.get('response_type')
-
-        if self.response_type != self.required_response_type:
-            raise errors.UnsupportedResponseTypeError(self)
-
-
-class RequestWithGrantTypeMixin():
-    required_grant_type = None
-
-    def _extract_grant_type(self):
-        self.grant_type = self.parameters.get('grant_type')
-
-        if self.grant_type != self.required_grant_type:
-            raise errors.UnsupportedGrantTypeError(self)
-
-
-class RequestWithScopesMixin():
-    def _extract_scopes(self):
-        from pauth.conf import middleware
-
-        scope_ids = {}
-        if self.parameters.get('scope'):
-            scope_ids = self.parameters['scope'].split(' ')
-        else:
-            raise errors.NoScopeError(self)
-
-        for id in scope_ids:
-            scope = middleware.get_scope(id)
-            if scope is None:
-                raise errors.UnknownScopeError(self, id)
-            elif not middleware.client_has_scope(self.client, scope):
-                raise errors.ScopeDeniedError(self, id)
-            else:
-                self.scopes.append(scope)
-
-
-class BaseAuthorizationRequest(Request,
-                               RequestWithClientMixin,
-                               RequestWithScopesMixin,
-                               RequestWithResponseTypeMixin):
-    required_parameters = ('client_id', 'response_type')
-
+class RequestWithRedirectUri(Request):
     def __init__(self, method='GET', headers=None, parameters=None):
-        super(BaseAuthorizationRequest, self).__init__(method, headers, parameters)
+        super(RequestWithRedirectUri, self).__init__(method, headers, parameters)
         self.redirect_uri = None
-        self.response_type = None
-        self.client = None
-        self.credentials = None
-        self.scopes = []
-        self.redirect_uri = self.parameters.get('redirect_uri')
-
-        self._extract_response_type()
-        self._extract_client()
-        self._extract_scopes()
+        self._extract_redirect_uri()
 
     def _propagate_error(self, error):
         error = super(BaseAuthorizationRequest, self)._propagate_error(error)
@@ -193,24 +108,32 @@ class BaseAuthorizationRequest(Request,
         return error
 
 
-class BaseAccessTokenRequest(Request,
-                             RequestWithGrantTypeMixin):
-    required_parameters = ('grant_type', 'code', 'redirect_uri')
-
+class BaseAuthorizationRequest(RequestWithRedirectUri):
+    VALIDATORS = (validators.has_method(('GET')),
+                  validators.has_parameters(('client_id', 'response_type')))
+    EXTRACTORS = (extractors.extract_response_type,
+                  extractors.extract_client,
+                  extractors.extract_scopes)
     def __init__(self, method='GET', headers=None, parameters=None):
         super(BaseAuthorizationRequest, self).__init__(method, headers, parameters)
-        self.redirect_uri = None
         self.response_type = None
         self.client = None
         self.credentials = None
-        self.redirect_uri = self.parameters.get('redirect_uri')
+        self.scopes = []
 
-        if method != 'GET':
-            raise errors.InvalidAuthorizationRequestError(self)
+        self._validate()
+        self._extract()
 
-        if not self._has_required_parameters():
-            raise errors.InvalidAuthorizationRequestError(self)
 
-        self._extract_response_type()
-        self._extract_client()
-        self._extract_scopes()
+class BaseAccessTokenRequest(RequestWithRedirectUri):
+    VALIDATORS = (validators.has_method(('POST')),
+                  validators.has_parameters(('grant_type', 'code', 'redirect_uri')))
+    EXTRACTORS = (extractors.extract_grant_type)
+
+    def __init__(self, method='GET', headers=None, parameters=None):
+        super(BaseAccessTokenRequest, self).__init__(method, headers, parameters)
+        self.response_type = None
+        self.code = None
+
+        self._validate()
+        self._extract()
