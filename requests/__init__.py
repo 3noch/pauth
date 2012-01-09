@@ -31,6 +31,9 @@ class Request(object):
         self.parameters = parameters or {}
 
         self.state = self.parameters.get('state')
+        
+        self._validate()
+        self._extract()
 
     def _validate(self):
         """
@@ -98,9 +101,9 @@ class Request(object):
 
 class RequestWithRedirectUri(Request):
     def __init__(self, method='GET', headers=None, parameters=None):
-        super(RequestWithRedirectUri, self).__init__(method, headers, parameters)
         self.redirect_uri = None
-        self._extract_redirect_uri()
+        extractors.extract_redirect_uri(self)
+        super(RequestWithRedirectUri, self).__init__(method, headers, parameters)
 
     def _propagate_error(self, error):
         error = super(BaseAuthorizationRequest, self)._propagate_error(error)
@@ -115,14 +118,11 @@ class BaseAuthorizationRequest(RequestWithRedirectUri):
                   extractors.extract_client,
                   extractors.extract_scopes]
     def __init__(self, method='GET', headers=None, parameters=None):
-        super(BaseAuthorizationRequest, self).__init__(method, headers, parameters)
         self.response_type = None
         self.client = None
         self.credentials = None
         self.scopes = []
-
-        self._validate()
-        self._extract()
+        super(BaseAuthorizationRequest, self).__init__(method, headers, parameters)
 
 
 class BaseAccessTokenRequest(RequestWithRedirectUri):
@@ -131,9 +131,6 @@ class BaseAccessTokenRequest(RequestWithRedirectUri):
     EXTRACTORS = [extractors.extract_grant_type]
 
     def __init__(self, method='GET', headers=None, parameters=None):
-        super(BaseAccessTokenRequest, self).__init__(method, headers, parameters)
         self.response_type = None
         self.code = None
-
-        self._validate()
-        self._extract()
+        super(BaseAccessTokenRequest, self).__init__(method, headers, parameters)
