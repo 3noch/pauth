@@ -30,8 +30,6 @@ class Request(object):
         self.headers = headers or {}
         self.parameters = parameters or {}
 
-        self.state = self.parameters.get('state')
-        
         self._validate()
         self._extract()
 
@@ -117,6 +115,7 @@ class BaseAuthorizationRequest(RequestWithRedirectUri):
     EXTRACTORS = [extractors.extract_response_type,
                   extractors.extract_client,
                   extractors.extract_scopes]
+
     def __init__(self, method='GET', headers=None, parameters=None):
         self.response_type = None
         self.client = None

@@ -4,7 +4,12 @@ import errors
 def extract_redirect_uri(request):
     request.redirect_uri = request.parameters.get('redirect_uri')
 
-def extract_client(self):
+
+def extract_state(request):
+    request.state = request.parameters.get('state')
+
+
+def extract_client(request):
     from pauth.conf import middleware
 
     client_id = request.parameters.get('client_id')
@@ -12,8 +17,9 @@ def extract_client(self):
 
     if request.client is None:
         raise errors.UnknownClientError(request, client_id)
-    elif not middleware.client_is_registered(self.client):
+    elif not middleware.client_is_registered(request.client):
         raise errors.UnknownClientError(request, client_id)
+
 
 def extract_response_type(request):
     request.response_type = request.parameters.get('response_type')
@@ -21,11 +27,13 @@ def extract_response_type(request):
     if request.response_type != request.REQUIRED_RESPONSE_TYPE:
         raise errors.UnsupportedResponseTypeError(request)
 
+
 def extract_grant_type(request):
     request.grant_type = request.parameters.get('grant_type')
 
     if request.grant_type != request.REQUIRED_GRANT_TYPE:
         raise errors.UnsupportedGrantTypeError(request)
+
 
 def extract_scopes(request):
     from pauth.conf import middleware
@@ -40,7 +48,7 @@ def extract_scopes(request):
         scope = middleware.get_scope(id)
         if scope is None:
             raise errors.UnknownScopeError(request, id)
-        elif not middleware.client_has_scope(self.client, scope):
+        elif not middleware.client_has_scope(request.client, scope):
             raise errors.ScopeDeniedError(request, id)
         else:
             request.scopes.append(scope)
