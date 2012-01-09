@@ -16,8 +16,8 @@ def MakeOAuthRequest(cls, request):
 
 
 class Request(object):
-    VALIDATORS = (validators.has_method(('GET')))
-    EXTRACTORS = ()
+    VALIDATORS = [validators.has_method(['GET'])]
+    EXTRACTORS = []
 
     def __init__(self, method='GET', headers=None, parameters=None):
         """
@@ -109,11 +109,11 @@ class RequestWithRedirectUri(Request):
 
 
 class BaseAuthorizationRequest(RequestWithRedirectUri):
-    VALIDATORS = (validators.has_method(('GET')),
-                  validators.has_parameters(('client_id', 'response_type')))
-    EXTRACTORS = (extractors.extract_response_type,
+    VALIDATORS = [validators.has_method(['GET']),
+                  validators.has_parameters(['client_id', 'response_type'])]
+    EXTRACTORS = [extractors.extract_response_type,
                   extractors.extract_client,
-                  extractors.extract_scopes)
+                  extractors.extract_scopes]
     def __init__(self, method='GET', headers=None, parameters=None):
         super(BaseAuthorizationRequest, self).__init__(method, headers, parameters)
         self.response_type = None
@@ -126,9 +126,9 @@ class BaseAuthorizationRequest(RequestWithRedirectUri):
 
 
 class BaseAccessTokenRequest(RequestWithRedirectUri):
-    VALIDATORS = (validators.has_method(('POST')),
-                  validators.has_parameters(('grant_type', 'code', 'redirect_uri')))
-    EXTRACTORS = (extractors.extract_grant_type)
+    VALIDATORS = [validators.has_method(['POST']),
+                  validators.has_parameters(['grant_type', 'code', 'redirect_uri'])]
+    EXTRACTORS = [extractors.extract_grant_type]
 
     def __init__(self, method='GET', headers=None, parameters=None):
         super(BaseAccessTokenRequest, self).__init__(method, headers, parameters)
