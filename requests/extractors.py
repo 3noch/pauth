@@ -27,7 +27,7 @@ def extract_grant_type(request):
     if request.grant_type != request.REQUIRED_GRANT_TYPE:
         raise errors.UnsupportedGrantTypeError(request)
 
-def _extract_scopes(request):
+def extract_scopes(request):
     from pauth.conf import middleware
 
     scope_ids = {}
