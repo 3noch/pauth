@@ -1,7 +1,6 @@
 from authorization import get_credentials_by_method
 import errors
-import extractors
-import validators
+import parameters as params
 
 
 def MakeOAuthRequest(cls, request):
@@ -15,9 +14,13 @@ def MakeOAuthRequest(cls, request):
     return middleware.adapt_request(cls, request)
 
 
+class RequestMetaclass(type):
+    def __new__(cls, name, bases, attributes):
+        pass
+
+
 class Request(object):
-    VALIDATORS = [validators.has_method(['GET'])]
-    EXTRACTORS = []
+    EXPECTED_PARAMETERS = []
 
     def __init__(self, method='GET', headers=None, parameters=None):
         """
@@ -29,24 +32,6 @@ class Request(object):
         self.method = method
         self.headers = headers or {}
         self.parameters = parameters or {}
-
-        self._validate()
-        self._extract()
-
-    def _validate(self):
-        """
-        Raises an error for anything about the request that isn't valid.
-        """
-        for validator in self.VALIDATORS:
-            validator(self)
-
-    def _extract(self):
-        """
-        Extracts all of the necessary information from the request and
-        raises errors if problems occur.
-        """
-        for extractor in self.EXTRACTORS:
-            extractor(self)
 
     def has_header(self, header):
         """
@@ -86,50 +71,35 @@ class Request(object):
             # correct response.
             raise self._propagate_error(error)
 
-    def _propagate_error(self, error):
+    def propagate(self, recipient):
         """
         Allows the request class to attach pertinent information to an error before it
         gets raised. This isn't just convenient but essential when the error needs to be
         sent to the requester via the redirect URI that was provided in the request. This
         method takes an error and returns a modified version of the error.
         """
-        error.state = self.state
-        return error
+        pass
 
 
-class RequestWithRedirectUri(Request):
-    def __init__(self, method='GET', headers=None, parameters=None):
-        self.redirect_uri = None
-        extractors.extract_redirect_uri(self)
-        super(RequestWithRedirectUri, self).__init__(method, headers, parameters)
+class BaseAuthorizationRequest(Request):
+    __metaclass__ = RequestMetaclass
 
-    def _propagate_error(self, error):
-        error = super(BaseAuthorizationRequest, self)._propagate_error(error)
-        error.redirect_uri = self.redirect_uri
-        return error
+    ALLOWED_METHOD = 'GET'
+    ALLOWED_RESPONSE_TYPE = None
 
-
-class BaseAuthorizationRequest(RequestWithRedirectUri):
-    VALIDATORS = [validators.has_method(['GET']),
-                  validators.has_parameters(['client_id', 'response_type'])]
-    EXTRACTORS = [extractors.extract_response_type,
-                  extractors.extract_client,
-                  extractors.extract_scopes]
-
-    def __init__(self, method='GET', headers=None, parameters=None):
-        self.response_type = None
-        self.client = None
-        self.credentials = None
-        self.scopes = []
-        super(BaseAuthorizationRequest, self).__init__(method, headers, parameters)
+    redirect_uri = params.RedirectUriParameter(propagate=True)
+    state = params.StateParameter(propagate=True)
+    response_type = params.ResponseTypeParameter(required=True, value=ALLOWED_RESPONSE_TYPE)
+    client = params.ClientParameter(name='client_id', required=True)
+    scope = params.ScopeParameter()
 
 
-class BaseAccessTokenRequest(RequestWithRedirectUri):
-    VALIDATORS = [validators.has_method(['POST']),
-                  validators.has_parameters(['grant_type', 'code', 'redirect_uri'])]
-    EXTRACTORS = [extractors.extract_grant_type]
+class BaseAccessTokenRequest(Request):
+    __metaclass__ = RequestMetaclass
 
-    def __init__(self, method='GET', headers=None, parameters=None):
-        self.response_type = None
-        self.code = None
-        super(BaseAccessTokenRequest, self).__init__(method, headers, parameters)
+    ALLOWED_METHOD = 'POST'
+    ALLOWED_GRANT_TYPE = None
+
+    redirect_uri = params.RedirectUriParameter(propagate=True)
+    grant_type = params.GrantTypeParameter(required=True, value=ALLOWED_GRANT_TYPE)
+    code = params.CodeParameter(required=True)
