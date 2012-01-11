@@ -14,20 +14,64 @@ def MakeOAuthRequest(cls, request):
     return middleware.adapt_request(cls, request)
 
 
+def copy_dict_except(source, except_keys):
+    """
+    Copies a dictionary into a new dictionary, but leaves out any keys in
+    the `except_keys` list.
+    """
+    new_dict = {}
+    for key, value in source.iteritems():
+        if key not in except_keys:
+            new_dict[key] = value
+
+    return new_dict
+
+
 class RequestMetaclass(type):
     def __new__(cls, name, bases, attributes):
-        pass
+        expected_parameters = cls.get_expected_parameters(attributes)
+        new_init = cls.create_new_init(parameters=expected_parameters,
+                                       old_init=attributes.get('__init__'))
+
+        new_attributes = copy_dict_except(attributes, expected_parameters)
+        new_attributes['__init__'] = new_init
+
+        return super(RequestMetaclass, cls).__new__(name, bases, new_attributes)
+
+    @classmethod
+    def create_new_init(cls, parameters, old_init=None):
+        def __init__(self, method='GET', headers=None, parameters=None):
+            super(self.__class__, self).__init__(method, headers, parameters)
+
+            for parameter in parameters:
+                setattr(self, parameter, None)
+
+            if old_init is not None:
+                old_init(self)
+
+        return __init__
+
+    @classmethod
+    def get_expected_parameters(cls, attributes):
+        return [key for key in attributes.iterkeys()
+                if cls.is_expected_parameter(key)]
+
+    @classmethod
+    def is_expected_parameter(cls, parameter_name):
+        """
+        Returns `True` for a class attribute that defines an expected
+        parameter of a request. Expected parameters are lower-case and don't
+        start with `__`.
+        """
+        return (not parameter_name.startswith('__')
+                and parameter_name.lower() == parameter_name)
 
 
 class Request(object):
-    EXPECTED_PARAMETERS = []
-
     def __init__(self, method='GET', headers=None, parameters=None):
         """
         This constructor defines our internally-standard interface for creating a
-        request. The library-user will have to define an adapter to transform their
-        requests into this interface (see `__new__()` above). But this interface
-        is pretty generic and straightforward, so it shouldn't be a problem.
+        request.
         """
         self.method = method
         self.headers = headers or {}
@@ -89,8 +133,8 @@ class BaseAuthorizationRequest(Request):
 
     redirect_uri = params.RedirectUriParameter(propagate=True)
     state = params.StateParameter(propagate=True)
-    response_type = params.ResponseTypeParameter(required=True, value=ALLOWED_RESPONSE_TYPE)
-    client = params.ClientParameter(name='client_id', required=True)
+    response_type = params.ResponseTypeParameter(required=True, expected_value=ALLOWED_RESPONSE_TYPE)
+    client = params.ClientParameter(required=True)
     scope = params.ScopeParameter()
 
 
@@ -101,5 +145,5 @@ class BaseAccessTokenRequest(Request):
     ALLOWED_GRANT_TYPE = None
 
     redirect_uri = params.RedirectUriParameter(propagate=True)
-    grant_type = params.GrantTypeParameter(required=True, value=ALLOWED_GRANT_TYPE)
+    grant_type = params.GrantTypeParameter(required=True, expected_value=ALLOWED_GRANT_TYPE)
     code = params.CodeParameter(required=True)

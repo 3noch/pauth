@@ -4,8 +4,7 @@ import errors
 class RequestParameter(object):
     NAME = None
 
-    def __init__(self, name, expected_value=None, required=False, propagate=False):
-        self.name = name
+    def __init__(self, expected_value=None, required=False, propagate=False):
         self.expected_value = expected_value
         self.required = required
         self.propagate = propagate
