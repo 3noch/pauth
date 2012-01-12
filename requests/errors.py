@@ -6,7 +6,8 @@ class RequestError(OAuthError):
     """
     A base exception class for all errors having to do with OAuth requests.
     """
-    id = 'invalid_request'
+    ID = 'invalid_request'
+    DESCRIPTION = 'Invalid request'
 
     def __init__(self, request=None):
         super(RequestError, self).__init__(
@@ -15,89 +16,79 @@ class RequestError(OAuthError):
         self.request = request
 
     def __str__(self):
-        return 'Invalid request'
+        return self.DESCRIPTION.format(self=self)
 
 
 class AccessDeniedError(RequestError):
-    id = 'access_denied'
-
-    def __str__(self):
-        return 'Request was denied'
+    ID = 'access_denied'
+    DESCRIPTION = 'Request was denied'
 
 
-class InvalidAccessTokenRequestError(RequestError):
-    def __str__(self):
-        return 'Invalid request for an access token'
+class AuthorizationRequestError(RequestError):
+    DESCRIPTION = 'Invalid authorization request'
 
 
-class InvalidAuthorizationRequestError(RequestError):
-    def __str__(self):
-        return 'Invalid authorization request'
+class AccessTokenRequestError(RequestError):
+    DESCRIPTION = 'Invalid request for an access token'
+
+
+class MissingQueryArgumentsError(RequestError):
+    DESCRIPTION = 'Required query arguments are missing: "{self.missing_args}"'
+
+    def __init__(self, request=None, missing_args=None):
+        super(MissingQueryArgumentsError, self).__init__(request)
+        self.missing_args = ','.join(missing_args)
 
 
 class UnsupportedResponseTypeError(RequestError):
-    id = 'unsupported_response_type'
-
-    def __str__(self):
-        return 'Unsupported response type: {response_type}'.format(
-            response_type=self.request.response_type or '[empty]')
+    ID = 'unsupported_response_type'
+    DESCRIPTION = 'Unsupported response type: "{self.request.response_type}"'
 
 
 class UnsupportedGrantTypeError(RequestError):
-    def __str__(self):
-        return 'Unsupported grant type: {grant_type}'.format(
-            grant_type=self.request.grant_type or '[empty]')
+    DESCRIPTION = 'Unsupported grant type: "{self.request.grant_type}"'
 
 
-# -- Errors with request's authentication ---
+# --- Errors with request's authentication ---
 class RequestAuthenticationError(RequestError):
     pass
 
 
 class UnknownAuthenticationMethod(RequestAuthenticationError):
+    DESCRIPTION = 'Unknown authentication method: {self.method}'
+
     def __init__(self, request=None, method='[unknown]'):
         super(UnknownAuthenticationMethod, self).__init__(request)
         self.method = method
 
-    def __str__(self):
-        return 'Unknown authentication method: {method}'.format(method=self.method)
-
 
 class MalformedAuthenticationCredentials(RequestAuthenticationError):
+    DESCRIPTION = 'Malformed authentication credentials: {self.data}'
+
     def __init__(self, request=None, data='[unknown]'):
         super(MalformedAuthenticationCredentials, self).__init__(request)
         self.data = data
 
-    def __str__(self):
-        return 'Malformed authentication credentials: {data}'.format(data=self.data)
-
 
 # --- Errors with the client making the request ---
-class RequestingClientError(OAuthError):
+class RequestingClientError(RequestError):
     """
     A base exception class for all OAuth errors having to do with clients.
     """
-    id = 'invalid_client'
-    description = 'Invalid client: {id}'
+    ID = 'invalid_client'
 
-    def __init__(self, request, client_id):
-        super(RequestingClientError, self).__init__(
-            state=request.state,
-            redirect_uri=request.redirect_uri)
+    def __init__(self, request=None, client_id=None):
+        super(RequestingClientError, self).__init__(request)
         self.client_id = client_id
-
-    def __str__(self):
-        return self.description.format(
-            id=self.client.id if self.client is not None else '[empty]')
 
 
 class UnknownClientError(RequestingClientError):
-    description = 'Unknown client: {id}'
+    DESCRIPTION = 'Unknown client: "{self.client_id}"'
 
 
 class UnauthorizedClientError(RequestingClientError):
-    id = 'unauthorized_client'
-    description = 'Unauthorized client: {id}'
+    ID = 'unauthorized_client'
+    DESCRIPTION = 'Unauthorized client: "{self.client_id}"'
 
 
 # --- Errors with the requested scopes ---
@@ -105,24 +96,16 @@ class RequestedScopeError(RequestError):
     """
     A base exception class for all errors having to do with OAuth scopes.
     """
-    id = 'invalid_scope'
-    description = 'Scope error: {scope}'
-
-    def __init__(self, request, scope_id=None):
-        super(RequestedScopeError, self).__init__(request=request)
-        self.scope_id = scope_id
-
-    def __str__(self):
-        return self.description.format(scope=self.scope_id)
+    ID = 'invalid_scope'
 
 
 class NoScopeError(RequestedScopeError):
-    description = 'No scope was requested'
+    DESCRIPTION = 'No scope was requested'
 
 
 class UnknownScopeError(RequestedScopeError):
-    description = 'Unknown scope: {scope}'
+    DESCRIPTION = 'Unknown scope: "{self.scope_id}"'
 
 
 class ScopeDeniedError(RequestedScopeError):
-    description = 'Access to scope was denied: {scope}'
+    DESCRIPTION = 'Access to scope was denied: "{self.scope_id}"'

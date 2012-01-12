@@ -28,43 +28,64 @@ def copy_dict_except(source, except_keys):
 
 
 class RequestMetaclass(type):
-    def __new__(cls, name, bases, attributes):
-        oauth_attributes = cls.get_oauth_attributes(attributes)
-        new_init = cls.create_new_init(parameters=oauth_attributes.keys(),
-                                       old_init=attributes.get('__init__'))
+    def __new__(cls, name, bases, attrs):
+        oauth_attrs = cls.get_oauth_attrs(attrs)
 
-        new_attributes = copy_dict_except(attributes, oauth_attributes.key())
-        new_attributes['__init__'] = new_init
+        new_attrs = copy_dict_except(attrs, oauth_attrs.key())
+        new_attrs['_validate_parameters'] = cls.create_validate_parameters(oauth_attrs)
+        new_attrs['_parse_query_args'] = cls.create_parse_query_args(oauth_attrs)
+        new_attrs['_propagate'] = cls.create_propagate(oauth_attrs)
 
         return super(RequestMetaclass, cls).__new__(name, bases, new_attributes)
 
     @classmethod
-    def create_new_init(cls, parameters, old_init=None):
-        def __init__(self, *args, **kwargs):
-            super(self.__class__, self).__init__(*args, **kwargs)
+    def create_validate_query_args(cls, oauth_attrs):
+        required_params = [param for key, param in attrs.iteritems()
+                           if param.required]
+        required_param_names = [param.name for param in cls.get_required_params(oauth_attrs)]
 
-            for parameter in parameters:
-                setattr(self, parameter, None)
+        def _validate_query_args(self):
+            missing_args = [arg for arg in self.query_args
+                            if arg not in required_param_names]
 
-            if old_init is not None:
-                old_init(self)
+            if missing_args:
+                raise errors.MissingQueryArgumentsError(self, missing_args)
 
-        return __init__
-
-    @classmethod
-    def get_oauth_attributes(cls, attributes):
-        return {key: value for key, value in attributes.iteritems()
-                if cls.is_oauth_parameter(key)]
+        return _validate_parameters
 
     @classmethod
-    def is_oauth_parameter(cls, parameter_name):
+    def create_parse_query_args(cls, oauth_attrs):
+        def _parse_query_args(self):
+            for name, param in oauth_attrs.iteritems():
+                setattr(self, name, param.get_from_request(self))
+
+        return _parse_query_args
+
+    @classmethod
+    def create_propagate(cls, oauth_attrs):
+        propagated_attrs = {key: param for key, param in oauth_attrs.iteritems()
+                            if param.propagate}
+
+        def _propagate(self, recipient):
+            for name, param in propagated_attrs.iteritems():
+                setattr(recipient, name, getattr(self, name))
+
+        return _propagate
+
+    @classmethod
+    def get_oauth_attrs(cls, attributes):
+        return {key: value for key, value in attrs.iteritems()
+                if cls.is_oauth_attr(key)]
+
+    @classmethod
+    def is_oauth_attrs(cls, attr_name):
         """
-        Returns `True` for a class attribute that defines a request's OAuth
+        Returns `True` for an attribute that defines a request's OAuth
         parameter. Expected parameters are lower-case and don't
         start with `__`.
         """
-        return (not parameter_name.startswith('__')
-                and parameter_name.lower() == parameter_name)
+        return (not attr_name.startswith('__')
+                and attr_name.lower() == attr_name)
 
 
 class Request(object):
@@ -72,14 +93,14 @@ class Request(object):
 
     ALLOWED_METHOD = 'GET'
 
-    def __init__(self, method=ALLOWED_METHOD, headers=None, parameters=None):
+    def __init__(self, method=ALLOWED_METHOD, headers=None, query_args=None):
         """
         This constructor defines our internally-standard interface for creating a
         request.
         """
         self.method = method
         self.headers = headers or {}
-        self.parameters = parameters or {}
+        self.query_args = query_args or {}
 
         self._validate()
 
