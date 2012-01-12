@@ -29,19 +29,19 @@ def copy_dict_except(source, except_keys):
 
 class RequestMetaclass(type):
     def __new__(cls, name, bases, attributes):
-        expected_parameters = cls.get_expected_parameters(attributes)
-        new_init = cls.create_new_init(parameters=expected_parameters,
+        oauth_attributes = cls.get_oauth_attributes(attributes)
+        new_init = cls.create_new_init(parameters=oauth_attributes.keys(),
                                        old_init=attributes.get('__init__'))
 
-        new_attributes = copy_dict_except(attributes, expected_parameters)
+        new_attributes = copy_dict_except(attributes, oauth_attributes.key())
         new_attributes['__init__'] = new_init
 
         return super(RequestMetaclass, cls).__new__(name, bases, new_attributes)
 
     @classmethod
     def create_new_init(cls, parameters, old_init=None):
-        def __init__(self, method='GET', headers=None, parameters=None):
-            super(self.__class__, self).__init__(method, headers, parameters)
+        def __init__(self, *args, **kwargs):
+            super(self.__class__, self).__init__(*args, **kwargs)
 
             for parameter in parameters:
                 setattr(self, parameter, None)
@@ -52,15 +52,15 @@ class RequestMetaclass(type):
         return __init__
 
     @classmethod
-    def get_expected_parameters(cls, attributes):
-        return [key for key in attributes.iterkeys()
-                if cls.is_expected_parameter(key)]
+    def get_oauth_attributes(cls, attributes):
+        return {key: value for key, value in attributes.iteritems()
+                if cls.is_oauth_parameter(key)]
 
     @classmethod
-    def is_expected_parameter(cls, parameter_name):
+    def is_oauth_parameter(cls, parameter_name):
         """
-        Returns `True` for a class attribute that defines an expected
-        parameter of a request. Expected parameters are lower-case and don't
+        Returns `True` for a class attribute that defines a request's OAuth
+        parameter. Expected parameters are lower-case and don't
         start with `__`.
         """
         return (not parameter_name.startswith('__')
@@ -68,7 +68,11 @@ class RequestMetaclass(type):
 
 
 class Request(object):
-    def __init__(self, method='GET', headers=None, parameters=None):
+    __metaclass__ = RequestMetaclass
+
+    ALLOWED_METHOD = 'GET'
+
+    def __init__(self, method=ALLOWED_METHOD, headers=None, parameters=None):
         """
         This constructor defines our internally-standard interface for creating a
         request.
@@ -76,6 +80,15 @@ class Request(object):
         self.method = method
         self.headers = headers or {}
         self.parameters = parameters or {}
+
+        self._validate()
+
+    def _validate():
+        """
+        Validates the request for cursory problems such as missing parameters and
+        invalid methods.
+        """
+        pass
 
     def has_header(self, header):
         """
@@ -126,8 +139,6 @@ class Request(object):
 
 
 class BaseAuthorizationRequest(Request):
-    __metaclass__ = RequestMetaclass
-
     ALLOWED_METHOD = 'GET'
     ALLOWED_RESPONSE_TYPE = None
 
@@ -139,8 +150,6 @@ class BaseAuthorizationRequest(Request):
 
 
 class BaseAccessTokenRequest(Request):
-    __metaclass__ = RequestMetaclass
-
     ALLOWED_METHOD = 'POST'
     ALLOWED_GRANT_TYPE = None
 
