@@ -32,7 +32,7 @@ class RequestMetaclass(type):
         oauth_attrs = cls.get_oauth_attrs(attrs)
 
         new_attrs = copy_dict_except(attrs, oauth_attrs.key())
-        new_attrs['_validate_parameters'] = cls.create_validate_parameters(oauth_attrs)
+        new_attrs['_validate_query_args'] = cls.create_validate_query_args(oauth_attrs)
         new_attrs['_parse_query_args'] = cls.create_parse_query_args(oauth_attrs)
         new_attrs['_propagate'] = cls.create_propagate(oauth_attrs)
 
@@ -51,7 +51,7 @@ class RequestMetaclass(type):
             if missing_args:
                 raise errors.MissingQueryArgumentsError(self, missing_args)
 
-        return _validate_parameters
+        return _validate_query_args
 
     @classmethod
     def create_parse_query_args(cls, oauth_attrs):
@@ -104,11 +104,14 @@ class Request(object):
 
         self._validate()
 
-    def _validate():
-        """
-        Validates the request for cursory problems such as missing parameters and
-        invalid methods.
-        """
+
+    def _validate_query_args(self):
+        pass
+
+    def _parse_query_args(self):
+        pass
+
+    def _propagate(self):
         pass
 
     def has_header(self, header):
