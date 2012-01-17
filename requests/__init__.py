@@ -27,8 +27,26 @@ def copy_dict_except(source, except_keys):
     return new_dict
 
 
+class MethodMustBeOverriddenByMetaclassError(errors.PauthError):
+    def __str__(self):
+        return 'This method must be overridden by a metaclass!'
+
+
 class RequestMetaclass(type):
     def __new__(cls, name, bases, attrs):
+        """
+        Constructs a modified instance of a request class. Here's how it works:
+
+        Any class attributes that are deemed to be OAuth parameters (see `is_oauth_attr()`) are
+        taken out of the resulting class and used to create a few helper methods that are attached
+        to the resulting class. Those helper methods are:
+            * _validate_query_args
+            * _parse_query_args
+            * _propagate
+
+        The resulting class can use these helper methods to do customized operations on its expected
+        OAuth parameters.
+        """
         oauth_attrs = cls.get_oauth_attrs(attrs)
 
         new_attrs = copy_dict_except(attrs, oauth_attrs.key())
@@ -40,6 +58,10 @@ class RequestMetaclass(type):
 
     @classmethod
     def create_validate_query_args(cls, oauth_attrs):
+        """
+        Creates a `_validate_query_args()` method, which does a cursory check of a request's query
+        arguments for missing or invalid OAuth parameters.
+        """
         required_params = [param for key, param in attrs.iteritems()
                            if param.required]
         required_param_names = [param.name for param in cls.get_required_params(oauth_attrs)]
@@ -55,6 +77,10 @@ class RequestMetaclass(type):
 
     @classmethod
     def create_parse_query_args(cls, oauth_attrs):
+        """
+        Creates a `_parse_query_args()` method, which parses a request's query arguments for its
+        expected OAuth parameters.
+        """
         def _parse_query_args(self):
             for name, param in oauth_attrs.iteritems():
                 setattr(self, name, param.get_from_request(self))
@@ -63,6 +89,10 @@ class RequestMetaclass(type):
 
     @classmethod
     def create_propagate(cls, oauth_attrs):
+        """
+        Creates a `_propagate()` method, which is used to copy certain, important class members to
+        other objects (like errors, for example).
+        """
         propagated_attrs = {key: param for key, param in oauth_attrs.iteritems()
                             if param.propagate}
 
@@ -74,18 +104,26 @@ class RequestMetaclass(type):
 
     @classmethod
     def get_oauth_attrs(cls, attributes):
+        """
+        Takes a dictionary of class attributes and returns only the attributes that define OAuth
+        parameters. See `is_oauth_attr()` for a description of attributes that define OAuth
+        parameters.
+        """
         return {key: value for key, value in attrs.iteritems()
-                if cls.is_oauth_attr(key)]
+                if cls.is_oauth_attr(key, value)]
 
     @classmethod
-    def is_oauth_attrs(cls, attr_name):
+    def is_oauth_attr(cls, attr_name, attr_value):
         """
-        Returns `True` for an attribute that defines a request's OAuth
-        parameter. Expected parameters are lower-case and don't
-        start with `__`.
+        Returns `True` for an attribute that defines a request's OAuth parameter.
+        An OAuth parameter is distinguished by the following criteria:
+            * Attribute's name does not start with any `_` characters
+            * Attribute's name is all lower-case.
+            * Attribute's value is an instance of the `RequestParameter` class
         """
-        return (not attr_name.startswith('__')
-                and attr_name.lower() == attr_name)
+        return (not attr_name.startswith('_')
+                and attr_name.lower() == attr_name
+                and isinstance(attr_value, RequestParameter))
 
 
 class Request(object):
@@ -95,44 +133,43 @@ class Request(object):
 
     def __init__(self, method=ALLOWED_METHOD, headers=None, query_args=None):
         """
-        This constructor defines our internally-standard interface for creating a
-        request.
+        This constructor defines our internally-standard interface for creating a request.
         """
         self.method = method
         self.headers = headers or {}
         self.query_args = query_args or {}
 
-        self._validate()
-
+        self._validate_query_args()
+        self._parse_query_args()
 
     def _validate_query_args(self):
-        pass
+        raise MethodMustBeOverriddenByMetaclassError()
 
     def _parse_query_args(self):
-        pass
+        raise MethodMustBeOverriddenByMetaclassError()
 
     def _propagate(self):
-        pass
+        raise MethodMustBeOverriddenByMetaclassError()
 
     def has_header(self, header):
         """
-        Returns `True` when `header` matches at least one of the requests headers
-        without comparing case.
+        Returns `True` when `header` matches at least one of the requests headers without comparing
+        case.
         """
         return any(header.lower() == h.lower() for h in self.headers)
 
     def get_header(self, header):
         """
-        Returns the value of the request header that matches `header` (without
-        comparing case) or `None` if there is no matching header.
+        Returns the value of the request header that matches `header` (without comparing case) or
+        `None` if there is no matching header.
         """
         return next((v for k, v in self.headers.items()
                      if k.lower() == header.lower()), None)
 
     def get_credentials(self):
         """
-        Returns Credentials object created from the information provided in the HTTP
-        `Authorization` header, or `None` if this information is absent or unrecognized.
+        Returns Credentials object created from the information provided in the HTTP `Authorization`
+        header, or `None` if this information is absent or unrecognized.
         """
         auth_header = self.get_header('Authorization')
 
@@ -147,17 +184,16 @@ class Request(object):
         try:
             return get_credentials_by_method(method.strip(), data.strip())
         except errors.UnknownAuthenticationMethod as error:
-            # Intercept any errors raised when getting credentials and attach state and
-            # redirection info for this request so that the error will generate the
-            # correct response.
-            raise self._propagate_error(error)
+            # Intercept any errors raised when getting credentials and attach state and redirection
+            # info for this request so that the error will generate the correct response.
+            raise self._propagate(error)
 
     def propagate(self, recipient):
         """
-        Allows the request class to attach pertinent information to an error before it
-        gets raised. This isn't just convenient but essential when the error needs to be
-        sent to the requester via the redirect URI that was provided in the request. This
-        method takes an error and returns a modified version of the error.
+        Allows the request class to attach pertinent information to an error before it gets raised.
+        This isn't just convenient but essential when the error needs to be sent to the requester
+        via the redirect URI that was provided in the request. This method takes an error and
+        returns a modified version of the error.
         """
         pass
 
