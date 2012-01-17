@@ -1,14 +1,14 @@
 from authorization import get_credentials_by_method
+from pauth.errors import PauthError
 import errors
 import parameters as params
 
 
 def MakeOAuthRequest(cls, request):
     """
-    A factory for generating Request objects from a library-user's request.
-    This factory uses the global middleware configuration to call a adapter
-    function defined by the library-user that converts their own requests
-    into an OAuthRequest that our library will understand.
+    A factory for generating Request objects from a library-user's request. This factory uses the
+    global middleware configuration to call a adapter function defined by the library-user that
+    converts their own requests into an OAuthRequest that our library will understand.
     """
     from pauth.conf import middleware
     return middleware.adapt_request(cls, request)
@@ -16,8 +16,7 @@ def MakeOAuthRequest(cls, request):
 
 def copy_dict_except(source, except_keys):
     """
-    Copies a dictionary into a new dictionary, but leaves out any keys in
-    the `except_keys` list.
+    Copies a dictionary into a new dictionary, but leaves out any keys in the `except_keys` list.
     """
     new_dict = {}
     for key, value in source.iteritems():
@@ -27,7 +26,11 @@ def copy_dict_except(source, except_keys):
     return new_dict
 
 
-class MethodMustBeOverriddenByMetaclassError(errors.PauthError):
+class MethodMustBeOverriddenByMetaclassError(PauthError):
+    """
+    A trivial error class for exposing the rare case when a class expects one or more of its methods
+    to be overridden by its metaclass constructor, but they aren't.
+    """
     def __str__(self):
         return 'This method must be overridden by a metaclass!'
 
@@ -54,7 +57,7 @@ class RequestMetaclass(type):
         new_attrs['_parse_query_args'] = cls.create_parse_query_args(oauth_attrs)
         new_attrs['_propagate'] = cls.create_propagate(oauth_attrs)
 
-        return super(RequestMetaclass, cls).__new__(name, bases, new_attributes)
+        return super(RequestMetaclass, cls).__new__(name, bases, new_attrs)
 
     @classmethod
     def create_validate_query_args(cls, oauth_attrs):
@@ -62,9 +65,8 @@ class RequestMetaclass(type):
         Creates a `_validate_query_args()` method, which does a cursory check of a request's query
         arguments for missing or invalid OAuth parameters.
         """
-        required_params = [param for key, param in attrs.iteritems()
-                           if param.required]
-        required_param_names = [param.name for param in cls.get_required_params(oauth_attrs)]
+        required_param_names = [param.name for key, param in oauth_attrs.iteritems()
+                                if param.required]
 
         def _validate_query_args(self):
             missing_args = [arg for arg in self.query_args
@@ -103,14 +105,14 @@ class RequestMetaclass(type):
         return _propagate
 
     @classmethod
-    def get_oauth_attrs(cls, attributes):
+    def get_oauth_attrs(cls, attrs):
         """
         Takes a dictionary of class attributes and returns only the attributes that define OAuth
         parameters. See `is_oauth_attr()` for a description of attributes that define OAuth
         parameters.
         """
         return {key: value for key, value in attrs.iteritems()
-                if cls.is_oauth_attr(key, value)]
+                if cls.is_oauth_attr(key, value)}
 
     @classmethod
     def is_oauth_attr(cls, attr_name, attr_value):
@@ -123,7 +125,7 @@ class RequestMetaclass(type):
         """
         return (not attr_name.startswith('_')
                 and attr_name.lower() == attr_name
-                and isinstance(attr_value, RequestParameter))
+                and isinstance(attr_value, params.RequestParameter))
 
 
 class Request(object):
