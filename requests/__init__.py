@@ -7,11 +7,11 @@ import parameters as params
 def MakeOAuthRequest(cls, request):
     """
     A factory for generating Request objects from a library-user's request. This factory uses the
-    global middleware configuration to call a adapter function defined by the library-user that
+    global adapter configuration to call a adapter function defined by the library-user that
     converts their own requests into an OAuthRequest that our library will understand.
     """
-    from pauth.conf import middleware
-    return middleware.adapt_request(cls, request)
+    from pauth.conf import adapter
+    return adapter.adapt_request(cls, request)
 
 
 def copy_dict_except(source, except_keys):

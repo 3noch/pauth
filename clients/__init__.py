@@ -3,9 +3,9 @@ class Client(object):
         self.credentials = credentials
 
     def is_registered(self):
-        from pauth.conf import middleware
-        return middleware.client_is_registered(self.id)
+        from pauth.conf import adapter
+        return adapter.client_is_registered(self.id)
 
     def is_authorized(self):
-        from pauth.conf import middleware
-        return middleware.client_is_authorized(self.id, self.secret)
+        from pauth.conf import adapter
+        return adapter.client_is_authorized(self.id, self.secret)

@@ -25,14 +25,14 @@ class ClientParameter(RequestParameter):
     NAME = 'client_id'
 
     def get_from_request(self, request):
-        from pauth.conf import middleware
+        from pauth.conf import adapter
 
         client_id = request.parameters.get(self.NAME)
-        client = middleware.assign_client(client_id or '')
+        client = adapter.get_client(client_id or '')
 
         if client is None:
             raise errors.UnknownClientError(request, client_id)
-        elif not middleware.client_is_registered(client):
+        elif not adapter.client_is_registered(client):
             raise errors.UnknownClientError(request, client_id)
 
         return client
@@ -66,7 +66,7 @@ class ScopeParameter(RequestParameter):
     NAME = 'scope'
 
     def get_from_request(self, request):
-        from pauth.conf import middleware
+        from pauth.conf import adapter
 
         scopes = None
 
@@ -77,10 +77,10 @@ class ScopeParameter(RequestParameter):
             raise errors.NoScopeError(request)
 
         for id in scope_ids:
-            scope = middleware.get_scope(id)
+            scope = adapter.get_scope(id)
             if scope is None:
                 raise errors.UnknownScopeError(request, id)
-            elif not middleware.client_has_scope(request.client, scope):
+            elif not adapter.client_has_scope(request.client, scope):
                 raise errors.ScopeDeniedError(request, id)
             else:
                 scopes.append(scope)

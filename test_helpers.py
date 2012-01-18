@@ -1,10 +1,10 @@
-from pauth.conf import PauthMiddleware, initialize, set_default_credentials_readers
+import conf
 
 
-class MockMiddleware(PauthMiddleware):
+class MockAdapter(conf.PauthAdapter):
     pass
 
 
-def setup_mock_middleware():
-    initialize(MockMiddleware())
-    set_default_credentials_readers()
+def setup_mock_adapter():
+    conf.initialize(MockAdapter())
+    conf.set_default_credentials_readers()

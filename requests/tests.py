@@ -4,7 +4,7 @@ from nose.tools import raises
 import authorization
 import errors
 from pauth.requests import Request
-from pauth.test_helpers import MockMiddleware, setup_mock_middleware
+from pauth.test_helpers import MockAdapter, setup_mock_adapter
 
 
 class MockRequest(Request):
@@ -13,9 +13,9 @@ class MockRequest(Request):
 
 def setup_credentials_reader():
     from pauth.conf import initialize
-    mock_middleware = MockMiddleware()
-    initialize(mock_middleware)
-    mock_middleware.set_credentials_reader('test', lambda x: x)
+    mock_adapter = MockAdapter()
+    initialize(mock_adapter)
+    mock_adapter.set_credentials_reader('test', lambda x: x)
 
 
 @with_setup(setup_credentials_reader)
@@ -81,7 +81,7 @@ def test_request_get_header():
     assert request.get_header('A-Header') == 'header-value'
 
 
-@with_setup(setup_mock_middleware)
+@with_setup(setup_mock_adapter)
 def test_request_get_credentials_valid():
     request = Request()
     assert request.get_credentials() is None
@@ -95,7 +95,7 @@ def test_request_get_credentials_valid():
     assert credentials.secret == password
 
 
-@with_setup(setup_mock_middleware)
+@with_setup(setup_mock_adapter)
 @raises(errors.UnknownAuthenticationMethod)
 def test_request_get_credentials_invalid():
     request = Request()

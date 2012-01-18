@@ -5,7 +5,7 @@ sys.path.append('../../../..')
 from pauth import conf
 
 
-class Middleware(conf.PauthMiddleware):
+class Adapter(conf.PauthAdapter):
     def adapt_request(self, cls, request):
         return cls(request.method,
                    self.get_standard_headers(request.META),
@@ -66,5 +66,5 @@ class Middleware(conf.PauthMiddleware):
         return headers
 
 
-conf.initialize(Middleware())
+conf.initialize(Adapter())
 conf.set_default_credentials_readers()

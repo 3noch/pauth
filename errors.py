@@ -14,11 +14,11 @@ class OAuthError(PauthError):
     always contain an ErrorResponse object that can be used as an HTTP
     response that follows the OAuth specification.
 
-    * The `id` field is a string specifying an OAuth error code.
+    * The `ID` field is a string specifying an OAuth error code.
     * The `get_response()` method returns an ErrorResponse that can be
       sent over HTTP as an OAuth-compliant response to the error.
     """
-    id = None
+    ID = None
 
     def __init__(self, state=None, redirect_uri=None):
         """
@@ -31,11 +31,11 @@ class OAuthError(PauthError):
         self.redirect_uri = redirect_uri
 
     def get_response(self):
-        from pauth.conf import middleware
-        return middleware.adapt_response(ErrorResponse(id=self.id,
-                                                       description=unicode(self),
-                                                       state=self.state,
-                                                       redirect_uri=self.redirect_uri))
+        from pauth.conf import adapter
+        return adapter.adapt_response(ErrorResponse(id=self.ID,
+                                                    description=unicode(self),
+                                                    state=self.state,
+                                                    redirect_uri=self.redirect_uri))
 
     def __str__(self):
         return 'Generic OAuth error'

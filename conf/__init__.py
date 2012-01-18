@@ -4,14 +4,14 @@ from errors import UnconfiguredError
 
 def _unconfigured():
     """
-    Raises an UnconfiguredError whenever its called. Its meant to just
-    flag the library-user that something's not configured right.
+    Raises an UnconfiguredError whenever its called. It's meant to just flag the library-user that
+    something's not configured right.
     """
-    raise UnconfiguredError('This middleware configuration hasn\'t been configured yet. '
+    raise UnconfiguredError('This adapter configuration hasn\'t been configured yet. '
                             'Did you forget to call `pauth.conf.initialize()`?')
 
 
-class PauthMiddleware(object):
+class PauthAdapter(object):
     def __init__(self):
         self._credentials_readers = {}
 
@@ -46,32 +46,30 @@ class PauthMiddleware(object):
         return self._credentials_readers.get(method.lower())
 
 
-# The global middleware object. This is used internally by the library but is configured by the
+# The global adapter object. This is used internally by the library but is configured by the
 # library-user. It allows the library-user to hook into the library for his specific use-case or
 # framework.
-middleware = None
+adapter = None
 
 
-def initialize(new_middleware=None):
+def initialize(new_adapter=None):
     """
     Initializes the library. This is the first point-of-entry for the library user. Before the
     library can be used, the library-user must call this function. Calling without arguments will
-    initialize the library with the default middleware (mostly unconfigured). Calling with the
-    `middleware` argument will initialize the library with a custom subclassed or duck-typed
-    middleware.
+    initialize the library with the default adapter (mostly unconfigured). Calling with the
+    `new_adapter` argument will initialize the library with a custom subclassed or duck-typed
+    adapter.
     """
-    global middleware
-    if new_middleware is None:
-        middleware = PauthMiddleware()
+    global adapter
+    if new_adapter is None:
+        adapter = PauthAdapter()
     else:
-        middleware = new_middleware
+        adapter = new_adapter
 
 
 def set_default_credentials_readers():
     """
-    Sets the default credentials readers to the middleware. This is useful if the library-user
-    doesn't want to provide his own credentials readers for common authorization methods like
-    Basic and MAC.
+    Sets the default credentials readers to the adapter. This is useful if the library-user doesn't
+    want to provide his own credentials readers for common authorization methods like HTTP Basic.
     """
-    middleware.set_credentials_reader('Basic', authorization.get_credentials_from_basic)
-    middleware.set_credentials_reader('Mac', authorization.get_credentials_from_mac)
+    adapter.set_credentials_reader('Basic', authorization.get_credentials_from_basic)
