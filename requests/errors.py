@@ -40,13 +40,20 @@ class MissingQueryArgumentsError(RequestError):
         self.missing_args = ','.join(missing_args)
 
 
-class UnsupportedResponseTypeError(RequestError):
+# --- Errors with unsupported types ---
+class UnsupportedTypeError(RequestError):
+    def __init__(self, request=None, unsupported_value=None):
+        super(UnsupportedTypeError, self).__init__(request)
+        self.unsupported_value = unsupported_value
+
+
+class UnsupportedResponseTypeError(UnsupportedTypeError):
     ID = 'unsupported_response_type'
-    DESCRIPTION = 'Unsupported response type: "{self.request.response_type}"'
+    DESCRIPTION = 'Unsupported response type: "{self.unsupported_value}"'
 
 
-class UnsupportedGrantTypeError(RequestError):
-    DESCRIPTION = 'Unsupported grant type: "{self.request.grant_type}"'
+class UnsupportedGrantTypeError(UnsupportedTypeError):
+    DESCRIPTION = 'Unsupported grant type: "{self.unsupported_value}"'
 
 
 # --- Errors with request's authentication ---
@@ -97,6 +104,10 @@ class RequestedScopeError(RequestError):
     A base exception class for all errors having to do with OAuth scopes.
     """
     ID = 'invalid_scope'
+
+    def __init__(self, request=None, scope_id=None):
+        super(RequestedScopeError, self).__init__(request)
+        self.scope_id = scope_id
 
 
 class NoScopeError(RequestedScopeError):

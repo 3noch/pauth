@@ -1,8 +1,9 @@
-import errors
+from pauth.requests import errors
 
 
 class RequestParameter(object):
     NAME = None
+    UNEXPECTED_VALUE_ERROR = errors.UnsupportedTypeError
 
     def __init__(self, expected_value=None, required=False, propagate=False):
         self.expected_value = expected_value
@@ -10,7 +11,14 @@ class RequestParameter(object):
         self.propagate = propagate
 
     def get_from_request(self, request):
-        return request.parameters.get(self.NAME)
+        value = request.parameters.get(self.NAME)
+
+        # This check is duplicated in each request's _validate_query_args() method.
+        if self.required and value is None:
+            raise errors.MissingQueryArgumentsError(request, self.NAME)
+
+        if self.expected_value is not None and value != self.expected_value:
+            raise self.UNEXPECTED_VALUE_ERROR(request, value)
 
 
 class RedirectUriParameter(RequestParameter):
@@ -40,26 +48,12 @@ class ClientParameter(RequestParameter):
 
 class ResponseTypeParameter(RequestParameter):
     NAME = 'response_type'
-
-    def get_from_request(self, request):
-        response_type = request.parameters.get(self.NAME)
-
-        if response_type != self.value:
-            raise errors.UnsupportedResponseTypeError(request)
-
-        return response_type
+    UNEXPECTED_VALUE_ERROR = errors.UnsupportedResponseTypeError
 
 
 class GrantTypeParameter(RequestParameter):
     NAME = 'grant_type'
-
-    def get_from_request(self, request):
-        grant_type = request.parameters.get(self.NAME)
-
-        if grant_type != self.value:
-            raise errors.UnsupportedGrantTypeError(request)
-
-        return grant_type
+    UNEXPECTED_VALUE_ERROR = errors.UnsupportedGrantTypeError
 
 
 class ScopeParameter(RequestParameter):

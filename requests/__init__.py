@@ -36,7 +36,7 @@ class MethodMustBeOverriddenByMetaclassError(PauthError):
 
 
 class RequestMetaclass(type):
-    def __new__(cls, name, bases, attrs):
+    def __new__(mcs, name, bases, attrs):
         """
         Constructs a modified instance of a request class. Here's how it works:
 
@@ -50,14 +50,15 @@ class RequestMetaclass(type):
         The resulting class can use these helper methods to do customized operations on its expected
         OAuth parameters.
         """
-        oauth_attrs = cls.get_oauth_attrs(attrs)
+        oauth_attrs = mcs.get_oauth_attrs(attrs)
 
-        new_attrs = copy_dict_except(attrs, oauth_attrs.key())
-        new_attrs['_validate_query_args'] = cls.create_validate_query_args(oauth_attrs)
-        new_attrs['_parse_query_args'] = cls.create_parse_query_args(oauth_attrs)
-        new_attrs['_propagate'] = cls.create_propagate(oauth_attrs)
+        new_attrs = copy_dict_except(attrs, oauth_attrs.iterkeys())
+        new_attrs['_validate_query_args'] = mcs.create_validate_query_args(oauth_attrs)
+        new_attrs['_parse_query_args'] = mcs.create_parse_query_args(oauth_attrs)
+        new_attrs['_propagate'] = mcs.create_propagate(oauth_attrs)
+        new_attrs['OAUTH_PARAMS'] = oauth_attrs.keys()
 
-        return super(RequestMetaclass, cls).__new__(name, bases, new_attrs)
+        return super(RequestMetaclass, mcs).__new__(mcs, name, bases, new_attrs)
 
     @classmethod
     def create_validate_query_args(cls, oauth_attrs):
@@ -65,7 +66,7 @@ class RequestMetaclass(type):
         Creates a `_validate_query_args()` method, which does a cursory check of a request's query
         arguments for missing or invalid OAuth parameters.
         """
-        required_param_names = [param.name for key, param in oauth_attrs.iteritems()
+        required_param_names = [param.NAME for key, param in oauth_attrs.iteritems()
                                 if param.required]
 
         def _validate_query_args(self):
@@ -131,6 +132,7 @@ class RequestMetaclass(type):
 class Request(object):
     __metaclass__ = RequestMetaclass
 
+    OAUTH_PARAMS = []
     ALLOWED_METHOD = 'GET'
 
     def __init__(self, method=ALLOWED_METHOD, headers=None, query_args=None):
@@ -141,6 +143,9 @@ class Request(object):
         self.headers = headers or {}
         self.query_args = query_args or {}
 
+        for param in self.OAUTH_PARAMS:
+            setattr(self, param, None)
+
         self._validate_query_args()
         self._parse_query_args()
 
@@ -150,7 +155,7 @@ class Request(object):
     def _parse_query_args(self):
         raise MethodMustBeOverriddenByMetaclassError()
 
-    def _propagate(self):
+    def _propagate(self, recipient):
         raise MethodMustBeOverriddenByMetaclassError()
 
     def has_header(self, header):
