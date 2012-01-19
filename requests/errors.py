@@ -33,11 +33,11 @@ class AccessTokenRequestError(RequestError):
 
 
 class MissingQueryArgumentsError(RequestError):
-    DESCRIPTION = 'Required query arguments are missing: "{self.missing_args}"'
+    DESCRIPTION = 'Required query arguments are missing: {self.missing_args}'
 
     def __init__(self, request=None, missing_args=None):
         super(MissingQueryArgumentsError, self).__init__(request)
-        self.missing_args = ','.join(missing_args)
+        self.missing_args = ', '.join(missing_args)
 
 
 # --- Errors with unsupported types ---

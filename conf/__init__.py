@@ -1,14 +1,14 @@
 from pauth.requests import authorization
-from errors import UnconfiguredError
+from pauth.errors import PauthError
 
 
-def _unconfigured():
+class UnconfiguredError(PauthError):
     """
-    Raises an UnconfiguredError whenever its called. It's meant to just flag the library-user that
-    something's not configured right.
+    An error meant to flag the library-user that something is not configured right.
     """
-    raise UnconfiguredError('This adapter configuration hasn\'t been configured yet. '
-                            'Did you forget to call `pauth.conf.initialize()`?')
+    def __str__(self):
+        return ("This Pauth adapter configuration has not been configured yet. "
+                'Did you forget to call `pauth.conf.initialize()`?')
 
 
 class PauthAdapter(object):
@@ -16,19 +16,19 @@ class PauthAdapter(object):
         self._credentials_readers = {}
 
     def adapt_request(self, cls, request):
-        _unconfigured()
+        raise UnconfiguredError()
 
     def adapt_response(self, response):
-        _unconfigured()
+        raise UnconfiguredError()
 
     def client_is_registered(self, client):
-        _unconfigured()
+        raise UnconfiguredError()
 
     def client_is_authorized(self, client, credentials=None):
-        _unconfigured()
+        raise UnconfiguredError()
 
     def client_has_scope(self, client, scope):
-        _unconfigured()
+        raise UnconfiguredError()
 
     def get_client(self, id):
         return id

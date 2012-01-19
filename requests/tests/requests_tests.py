@@ -16,11 +16,11 @@ def test_request_has_required_parameters():
     request = MockRequest()
     assert not request._has_required_parameters()
 
-    request.parameters['not-required'] = 'value1'
+    request.query_args['not-required'] = 'value1'
     assert not request._has_required_parameters()
 
-    request.parameters['required1'] = 'value1'
-    request.parameters['required2'] = 'value2'
+    request.query_args['required1'] = 'value1'
+    request.query_args['required2'] = 'value2'
     assert request._has_required_parameters()
 
 

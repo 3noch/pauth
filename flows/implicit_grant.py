@@ -2,7 +2,7 @@ from pauth.requests import BaseAuthorizationRequest, MakeOAuthRequest
 
 
 class AuthorizationRequest(BaseAuthorizationRequest):
-    required_response_type = 'token'
+    ALLOWED_RESPONSE_TYPE = 'token'
 
 
 def request_authorization(request):

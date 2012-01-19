@@ -1,8 +1,16 @@
 from pauth.requests import errors
 
 
+# Priorities are used to determine which OAuth parameters to parse first.
+INSANELY_HIGH_PRIORITY = 0
+HIGH_PRIORITY = 1
+MEDIUM_PRIORITY = 2
+LOW_PRIORITY = 3
+
+
 class RequestParameter(object):
     NAME = None
+    PRIORITY = LOW_PRIORITY
     UNEXPECTED_VALUE_ERROR = errors.UnsupportedTypeError
 
     def __init__(self, expected_value=None, required=False, propagate=False):
@@ -11,7 +19,7 @@ class RequestParameter(object):
         self.propagate = propagate
 
     def get_from_request(self, request):
-        value = request.parameters.get(self.NAME)
+        value = request.query_args.get(self.NAME)
 
         # This check is duplicated in each request's _validate_query_args() method.
         if self.required and value is None:
@@ -23,10 +31,12 @@ class RequestParameter(object):
 
 class RedirectUriParameter(RequestParameter):
     NAME = 'redirect_uri'
+    PRIORITY = INSANELY_HIGH_PRIORITY
 
 
 class StateParameter(RequestParameter):
     NAME = 'state'
+    PRIORITY = HIGH_PRIORITY
 
 
 class ClientParameter(RequestParameter):
@@ -35,7 +45,7 @@ class ClientParameter(RequestParameter):
     def get_from_request(self, request):
         from pauth.conf import adapter
 
-        client_id = request.parameters.get(self.NAME)
+        client_id = request.query_args.get(self.NAME)
         client = adapter.get_client(client_id or '')
 
         if client is None:
@@ -48,11 +58,13 @@ class ClientParameter(RequestParameter):
 
 class ResponseTypeParameter(RequestParameter):
     NAME = 'response_type'
+    PRIORITY = MEDIUM_PRIORITY
     UNEXPECTED_VALUE_ERROR = errors.UnsupportedResponseTypeError
 
 
 class GrantTypeParameter(RequestParameter):
     NAME = 'grant_type'
+    PRIORITY = MEDIUM_PRIORITY
     UNEXPECTED_VALUE_ERROR = errors.UnsupportedGrantTypeError
 
 
@@ -62,14 +74,13 @@ class ScopeParameter(RequestParameter):
     def get_from_request(self, request):
         from pauth.conf import adapter
 
-        scopes = None
-
         scope_ids = {}
-        if request.parameters.get(self.NAME):
-            scope_ids = request.parameters[self.NAME].split(' ')
+        if request.query_args.get(self.NAME):
+            scope_ids = request.query_args[self.NAME].split(' ')
         else:
             raise errors.NoScopeError(request)
 
+        scopes = {}
         for id in scope_ids:
             scope = adapter.get_scope(id)
             if scope is None:
