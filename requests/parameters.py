@@ -28,7 +28,7 @@ class RequestParameter(object):
 
 class RedirectUriParameter(RequestParameter):
     NAME = 'redirect_uri'
-    PRIORITY = 1 # this must always parsed first
+    PRIORITY = 1 # this must always be parsed first
 
 
 class StateParameter(RequestParameter):

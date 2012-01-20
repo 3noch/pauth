@@ -21,7 +21,7 @@ Testing
 Pauth can be tested with [nose][] like this:
 
     $ cd pauth
-	$ nosetests
+    $ nosetests
 
 or for testing, like this:
 
