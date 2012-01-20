@@ -1,16 +1,9 @@
 from pauth.requests import errors
 
 
-# Priorities are used to determine which OAuth parameters to parse first.
-INSANELY_HIGH_PRIORITY = 0
-HIGH_PRIORITY = 1
-MEDIUM_PRIORITY = 2
-LOW_PRIORITY = 3
-
-
 class RequestParameter(object):
     NAME = None
-    PRIORITY = LOW_PRIORITY
+    PRIORITY = 100 # really low priority
     UNEXPECTED_VALUE_ERROR = errors.UnsupportedTypeError
 
     def __init__(self, expected_value=None, required=False, propagate=False):
@@ -21,26 +14,48 @@ class RequestParameter(object):
     def get_from_request(self, request):
         value = request.query_args.get(self.NAME)
 
-        # This check is duplicated in each request's _validate_query_args() method.
         if self.required and value is None:
             raise errors.MissingQueryArgumentsError(request, self.NAME)
 
         if self.expected_value is not None and value != self.expected_value:
             raise self.UNEXPECTED_VALUE_ERROR(request, value)
 
+        return value
+
+    def __repr__(self):
+        return self.__class__.__name__
+
 
 class RedirectUriParameter(RequestParameter):
     NAME = 'redirect_uri'
-    PRIORITY = INSANELY_HIGH_PRIORITY
+    PRIORITY = 1 # this must always parsed first
 
 
 class StateParameter(RequestParameter):
     NAME = 'state'
-    PRIORITY = HIGH_PRIORITY
+    PRIORITY = 2 # this must always be parsed second
+
+
+class ResponseTypeParameter(RequestParameter):
+    NAME = 'response_type'
+    PRIORITY = 3
+    UNEXPECTED_VALUE_ERROR = errors.UnsupportedResponseTypeError
+
+
+class GrantTypeParameter(RequestParameter):
+    NAME = 'grant_type'
+    PRIORITY = 3
+    UNEXPECTED_VALUE_ERROR = errors.UnsupportedGrantTypeError
+
+
+class CodeParameter(RequestParameter):
+    NAME = 'code'
+    PRIORITY = 3
 
 
 class ClientParameter(RequestParameter):
     NAME = 'client_id'
+    PRIORITY = 4 # this should always be parsed fourth or so
 
     def get_from_request(self, request):
         from pauth.conf import adapter
@@ -56,18 +71,6 @@ class ClientParameter(RequestParameter):
         return client
 
 
-class ResponseTypeParameter(RequestParameter):
-    NAME = 'response_type'
-    PRIORITY = MEDIUM_PRIORITY
-    UNEXPECTED_VALUE_ERROR = errors.UnsupportedResponseTypeError
-
-
-class GrantTypeParameter(RequestParameter):
-    NAME = 'grant_type'
-    PRIORITY = MEDIUM_PRIORITY
-    UNEXPECTED_VALUE_ERROR = errors.UnsupportedGrantTypeError
-
-
 class ScopeParameter(RequestParameter):
     NAME = 'scope'
 
@@ -80,7 +83,7 @@ class ScopeParameter(RequestParameter):
         else:
             raise errors.NoScopeError(request)
 
-        scopes = {}
+        scopes = []
         for id in scope_ids:
             scope = adapter.get_scope(id)
             if scope is None:
@@ -91,7 +94,3 @@ class ScopeParameter(RequestParameter):
                 scopes.append(scope)
 
         return scopes
-
-
-class CodeParameter(RequestParameter):
-    NAME = 'code'

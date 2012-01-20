@@ -26,7 +26,6 @@ class RequestMetaclass(type):
 
         new_attrs = copy_dict_except(attrs, oauth_attrs.iterkeys())
         new_attrs['_OAUTH_ATTRS'] = oauth_attrs
-        new_attrs['_validate_query_args'] = create_validate_query_args(oauth_attrs)
         new_attrs['_parse_query_args'] = create_parse_query_args(oauth_attrs)
         new_attrs['_propagate'] = create_propagate(oauth_attrs)
         new_attrs['_meta_init'] = create_meta_init(oauth_attrs)
@@ -64,34 +63,20 @@ def create_meta_init(oauth_attrs):
     return _meta_init
 
 
-def create_validate_query_args(oauth_attrs):
-    """
-    Creates a `_validate_query_args()` method which does a cursory check of a request's query
-    arguments for missing or invalid OAuth parameters.
-    """
-    required_param_names = [param.NAME for key, param in oauth_attrs.iteritems()
-                            if param.required]
-
-    def _validate_query_args(self):
-        missing_args = [arg for arg in self.query_args
-                        if arg not in required_param_names]
-
-        if missing_args:
-            raise MissingQueryArgumentsError(self, missing_args)
-
-    return _validate_query_args
-
-
 def create_parse_query_args(oauth_attrs):
     """
     Creates a `_parse_query_args()` method which parses a request's query arguments for its
     expected OAuth parameters.
     """
     def _parse_query_args(self):
-        # TODO: Sort these first!
+        """
+        Parses each query argument based on the request's OAuth parameters. The parameters
+        are parsed in order of their priority.
+        """
+        sorted_keys = sorted(oauth_attrs, key=lambda key: oauth_attrs[key].PRIORITY)
 
-        for name, param in oauth_attrs.iteritems():
-            setattr(self, name, param.get_from_request(self))
+        for key in sorted_keys:
+            setattr(self, key, oauth_attrs[key].get_from_request(self))
 
     return _parse_query_args
 
@@ -151,13 +136,9 @@ class BaseRequest(object):
         self.query_args = query_args or {}
 
         self._meta_init()
-        self._validate_query_args()
         self._parse_query_args()
 
     def _meta_init(self):
-        raise MethodMustBeOverriddenByMetaclassError()
-
-    def _validate_query_args(self):
         raise MethodMustBeOverriddenByMetaclassError()
 
     def _parse_query_args(self):

@@ -22,7 +22,7 @@ class BaseAuthorizationRequest(BaseRequest):
     state = params.StateParameter(propagate=True)
     response_type = params.ResponseTypeParameter(required=True, expected_value=ALLOWED_RESPONSE_TYPE)
     client = params.ClientParameter(required=True)
-    scope = params.ScopeParameter()
+    scopes = params.ScopeParameter()
 
 
 class BaseAccessTokenRequest(BaseRequest):
