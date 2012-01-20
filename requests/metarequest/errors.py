@@ -12,8 +12,8 @@ class MultipleOAuthParamDefinitionsInParents(RequestConfigurationError)
 
 class MethodMustBeOverriddenByMetaclassError(RequestConfigurationError):
     """
-    A trivial error class for exposing the rare case when a class expects one or more of its methods
-    to be overridden by its metaclass constructor, but they aren't.
+    A trivial error class for exposing the [virtually impossible] case when a class expects one or more of
+    its methods to be overridden by its metaclass constructor, but they aren't.
     """
     def __str__(self):
         return 'This method must be overridden by a metaclass!'

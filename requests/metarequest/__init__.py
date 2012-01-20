@@ -12,19 +12,29 @@ class RequestMetaclass(type):
         Any class attributes that are deemed to be OAuth parameters (see `is_oauth_attr()`) are
         taken out of the resulting class and used to create a few helper methods that are attached
         to the resulting class. Those helper methods are:
-            * _validate_query_args
-            * _parse_query_args
-            * _propagate
+          * _validate_query_args
+          * _parse_query_args
+          * _propagate
 
         The resulting class can use these helper methods to do customized operations on its expected
         OAuth parameters.
+
+        For example:
+            >>> class MyRequest(object):
+            ...    __metaclass__ = RequestMetaclass
+            ...
+            ...   a_parameter = RequestParameter()
+            ...
+            >>> dir(MyRequest)
+            ['__doc__', '__module__', '__metaclass__', 'a_parameter', '_OAUTH_ATTRS',
+            '_parse_query_args', '_propagate', '_meta_init', etc.]
         """
 
         # Get the OAuth parameters from the new class and all its parents.
         oauth_attrs = get_oauth_attrs_from_bases(bases)
         oauth_attrs.update(get_oauth_attrs(attrs)) # These OAuth parameters always trump those from the bases
 
-        new_attrs = copy_dict_except(attrs, oauth_attrs.iterkeys())
+        new_attrs = dict_difference(attrs, oauth_attrs)
         new_attrs['_OAUTH_ATTRS'] = oauth_attrs
         new_attrs['_parse_query_args'] = create_parse_query_args(oauth_attrs)
         new_attrs['_propagate'] = create_propagate(oauth_attrs)
