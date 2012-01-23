@@ -4,12 +4,12 @@ from pauth.requests import errors
 class RequestParameter(object):
     NAME = None
     PRIORITY = 100 # really low priority
+    PROPAGATE = False
     UNEXPECTED_VALUE_ERROR = errors.UnsupportedTypeError
 
-    def __init__(self, expected_value=None, required=False, propagate=False):
+    def __init__(self, expected_value=None, required=False):
         self.expected_value = expected_value
         self.required = required
-        self.propagate = propagate
 
     def get_from_request(self, request):
         value = request.query_args.get(self.NAME)
@@ -29,11 +29,13 @@ class RequestParameter(object):
 class RedirectUriParameter(RequestParameter):
     NAME = 'redirect_uri'
     PRIORITY = 1 # this must always be parsed first
+    PROPAGATE = True
 
 
 class StateParameter(RequestParameter):
     NAME = 'state'
     PRIORITY = 2 # this must always be parsed second
+    PROPAGATE = True
 
 
 class ResponseTypeParameter(RequestParameter):

@@ -18,8 +18,8 @@ class BaseAuthorizationRequest(BaseRequest):
     ALLOWED_METHOD = 'GET'
     ALLOWED_RESPONSE_TYPE = None
 
-    redirect_uri = params.RedirectUriParameter(propagate=True)
-    state = params.StateParameter(propagate=True)
+    redirect_uri = params.RedirectUriParameter()
+    state = params.StateParameter()
     response_type = params.ResponseTypeParameter(required=True, expected_value=ALLOWED_RESPONSE_TYPE)
     client = params.ClientParameter(required=True)
     scopes = params.ScopeParameter()
@@ -29,6 +29,6 @@ class BaseAccessTokenRequest(BaseRequest):
     ALLOWED_METHOD = 'POST'
     ALLOWED_GRANT_TYPE = None
 
-    redirect_uri = params.RedirectUriParameter(propagate=True)
+    redirect_uri = params.RedirectUriParameter()
     grant_type = params.GrantTypeParameter(required=True, expected_value=ALLOWED_GRANT_TYPE)
     code = params.CodeParameter(required=True)

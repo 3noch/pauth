@@ -19,7 +19,3 @@ def get_credentials_from_basic(data):
         raise errors.MalformedAuthenticationCredentials(data=data)
 
     return Credentials(username, password)
-
-
-def get_credentials_from_mac(data):
-    pass

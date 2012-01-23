@@ -97,7 +97,7 @@ def create_propagate(oauth_attrs):
     other objects (like errors, for example).
     """
     propagated_attrs = {key: param for key, param in oauth_attrs.iteritems()
-                        if param.propagate}
+                        if param.PROPAGATE}
 
     def _propagate(self, recipient):
         for name, param in propagated_attrs.iteritems():
