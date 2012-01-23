@@ -1,6 +1,6 @@
 Pauth
 =====
-Pauth is an easy-to-use, lightweight, extensible [OAuth][] library for
+Pauth is an easy-to-use, lightweight, extensible [OAuth 2.0][] library for
 [Python][].
 
   - Easy-to-use: Pauth is straight to the point and lets you do minimal
@@ -12,7 +12,7 @@ Pauth is an easy-to-use, lightweight, extensible [OAuth][] library for
 
 Pauth is also *not anywhere near done yet!*
 
-  [OAuth]: http://www.oauth.net/
+  [OAuth 2.0]: http://oauth.net/2/
   [Python]: http://www.python.org/
 
 
