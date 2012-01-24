@@ -1,4 +1,5 @@
 import httplib
+import json
 from urllib import urlencode
 
 from constants import DEFAULT_CONTENT_TYPE
@@ -21,11 +22,11 @@ class Response(object):
 class AccessTokenResponse(Response):
     CONTENT_TYPE = 'application/json;charset=utf-8'
     HEADERS = {'Cache-Control': 'no-store',
-               'Pragma:' 'no-cache'}
+               'Pragma': 'no-cache'}
 
     def __init__(self, access_token=None):
         super(AccessTokenResponse, self).__init__(
-            content=access_token.to_json(),
+            content=json.dumps(access_token),
             headers=self.HEADERS,
             content_type=self.CONTENT_TYPE)
         self.access_token = access_token
@@ -34,7 +35,6 @@ class AccessTokenResponse(Response):
         return '<{class_name}: {access_token}>'.format(
             class_name=self.__class__.__name__,
             content=self.access_token)
-
 
 
 class ErrorResponse(Response):
@@ -64,7 +64,7 @@ class ErrorResponse(Response):
 
     def __str__(self):
         return 'OAuth Error: {id} "{description}"'.format(
-            id=self.id
+            id=self.id,
             description=self.description)
 
     def __repr__(self):
