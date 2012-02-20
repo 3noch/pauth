@@ -31,7 +31,6 @@ def authorize(request):
                 'state': 'randomstate'})))
 
 
-
 def authorize_response(request):
     error = request.GET.get('error')
     code = request.GET.get('code')

@@ -1,7 +1,7 @@
 from pauth.errors import PauthError
 from pauth.requests.errors import MissingQueryArgumentsError
 from pauth.requests.parameters import RequestParameter
-from pauth.requests.metarequest.dict_utils import copy_dict_except, dicts_intersect
+from pauth.requests.metarequest.dict_utils import dict_difference, dicts_intersect
 
 
 class RequestMetaclass(type):

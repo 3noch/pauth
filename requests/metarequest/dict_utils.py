@@ -1,6 +1,6 @@
-def dict_difference(source, except_keys):
+def dict_difference(dict1, dict2):
     """
-    Returns the difference between `dict1` and `dict2`, e.g. `dict1` without items in `dict2`.
+    Returns the difference between `dict1` and `dict2`, i.e. `dict1` without items in `dict2`.
     """
     return {key: value for key, value in dict1.iteritems() if key not in dict2}
 
