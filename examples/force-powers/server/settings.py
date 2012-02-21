@@ -6,7 +6,6 @@ import adapters
 # Custom settings
 PROJECT_PATH = os.path.dirname(__file__)
 SHARED_PATH = os.path.join(PROJECT_PATH, '..', 'shared')
-STATIC_PATH = os.path.join(SHARED_PATH, 'static')
 
 
 # Django settings
@@ -85,7 +84,8 @@ PREPEND_WWW = False
 
 # Additional locations of static files
 STATICFILES_DIRS = (
-    STATIC_PATH,
+    os.path.join(PROJECT_PATH, 'static'),
+    os.path.join(SHARED_PATH, 'static'),
 )
 
 # List of finder classes that know how to find static files in

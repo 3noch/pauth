@@ -1,6 +1,6 @@
 from httplib import OK
 from httplib2 import Http, HttpLib2Error
-from simplejson import loads, JSONDecodeError
+from json import loads
 
 from django.conf import settings
 
@@ -14,6 +14,6 @@ def get_scopes(client_id=None):
         response, content = http.request(uri)
         if response.status == OK:
             return loads(content)
-    except (HttpLib2Error, JSONDecodeError):
+    except HttpLib2Error:
         pass
     return None

@@ -86,6 +86,7 @@ PREPEND_WWW = False
 
 # Additional locations of static files
 STATICFILES_DIRS = (
+    os.path.join(PROJECT_PATH, 'static'),
     os.path.join(SHARED_PATH, 'static'),
 )
 
