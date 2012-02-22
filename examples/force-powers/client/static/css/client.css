@@ -1,3 +1,17 @@
 body {
     background-image: url("../img/subtle-stripe.png");
 }
+
+
+#main #middle #client-powers {
+  font-size: 80%;
+  color: #555;
+}
+
+
+footer {
+    background-color: #567;
+    color: #ccc;
+    text-shadow: 1px 1px 0px #222;
+    font-size: 80%;
+}

@@ -206,6 +206,33 @@ td { vertical-align: top; }
    Author: Elliot Cameron (elliot.cameron@covenanteyes.com)
    ========================================================================== */
 
+/* Stick footer */
+html, body {
+  height: 100%;
+}
+
+#holder {
+  min-height: 100%;
+  position: relative;
+}
+
+#body {
+  padding-bottom: 50px; /* height of footer */
+}
+
+footer {
+  bottom: 0;
+  height: 50px;
+  left: 0;
+  position: absolute;
+  right: 0;
+}
+
+footer p {
+  padding: 5px;
+}
+
+/* Other customizations */
 ul.form-item {
   list-style-image: none;
   list-style-type: none;
@@ -229,11 +256,6 @@ ul.form-item {
   float: right;
   margin: 10px;
   width: 200px;
-}
-
-#main #middle #client-powers {
-  font-size: 80%;
-  color: #aaa;
 }
 
 #main #bottom {
