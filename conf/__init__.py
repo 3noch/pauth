@@ -1,19 +1,18 @@
+from pauth.conf import flows
+from pauth.conf.errors import UnconfiguredError
 from pauth.requests import authorization
-from pauth.errors import PauthError
 
 
-class UnconfiguredError(PauthError):
-    """
-    An error meant to flag the library-user that something is not configured right.
-    """
-    def __str__(self):
-        return ("This Pauth adapter configuration has not been configured yet. "
-                'Did you forget to call `pauth.conf.initialize()`?')
+class FlowAdapters(object):
+    def __init__(self):
+        self.auth_code = flows.AuthorizationCodeFlowAdapter()
+        self.implicit_grant = flows.ImplicitGrantFlowAdapter()
 
 
 class PauthAdapter(object):
     def __init__(self):
         self._credentials_readers = {}
+        self.flow_adapters = FlowAdapters()
 
     def adapt_request(self, cls, request):
         raise UnconfiguredError()

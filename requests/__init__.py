@@ -4,16 +4,6 @@ from pauth.requests.authorization import get_credentials_by_method
 from pauth.requests.metarequest import BaseRequest
 
 
-def MakeOAuthRequest(cls, request):
-    """
-    A factory for generating Request objects from a library-user's request. This factory uses the
-    global adapter configuration to call a adapter function defined by the library-user that
-    converts their own requests into an OAuthRequest that our library will understand.
-    """
-    from pauth.conf import adapter
-    return adapter.adapt_request(cls, request)
-
-
 class BaseAuthorizationRequest(BaseRequest):
     ALLOWED_METHOD = 'GET'
     ALLOWED_RESPONSE_TYPE = None
